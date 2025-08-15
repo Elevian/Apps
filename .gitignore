@@ -43,3 +43,5 @@ next-env.d.ts
 .env.local
 client/.env
 server/.env
+.env
+client/.env
