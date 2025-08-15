@@ -2,34 +2,38 @@ services:
   - type: web
     name: gutenberg-characters
     env: node
-    plan: free
-    region: oregon
-    
     buildCommand: |
-      # Set environment variables
+      # Set environment variables for better reliability
       export NODE_ENV=production
       export NODE_OPTIONS="--max-old-space-size=4096"
       export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+      export PNPM_HOME="$HOME/.local/share/pnpm"
+      export PATH="$PNPM_HOME:$PATH"
+      
+      # Install pnpm if not available
+      if ! command -v pnpm &> /dev/null; then
+        npm install -g pnpm@8.15.4
+      fi
       
       # Clear any existing caches and old builds
+      pnpm store prune || true
       rm -rf client/dist server/dist
       
-      # Install dependencies with npm
-      npm install
+      # Install dependencies with retry logic
+      pnpm install --frozen-lockfile --prefer-offline=false --network-timeout=300000
       
       # Build both client and server
-      npm run build --workspace=client
-      npm run build --workspace=server
+      pnpm run build --workspace=client
+      pnpm run build --workspace=server
       
       # Verify builds
       if [ ! -d "client/dist" ] || [ ! -d "server/dist" ]; then
         echo "❌ Build verification failed"
         exit 1
       fi
-    
     startCommand: |
-      cd server && npm start
-    
+      # Start the server
+      cd server && pnpm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -37,5 +41,7 @@ services:
         value: 10000
       - key: NPM_CONFIG_REGISTRY
         value: https://registry.npmjs.org/
+      - key: PNPM_HOME
+        value: $HOME/.local/share/pnpm
       - key: NODE_OPTIONS
         value: --max-old-space-size=4096

@@ -26,4 +26,4 @@ shamefully-hoist=true
 prefer-workspace-packages=true
 
 # Node version compatibility
-use-node-version=22.16.0
+use-node-version=18.0.0
