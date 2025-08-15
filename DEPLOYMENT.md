@@ -1,221 +1,173 @@
-# 🚀 Deployment Guide
+# Render Deployment Guide
 
-## Quick Deployment Checklist
+## 🚀 Quick Deploy
 
-### **Pre-Deployment Verification**
-- ✅ **Performance**: `npm run dev` → Test graph interactions (≥50 FPS)
-- ✅ **Features**: Analyze sample book (84, 1342, or 2701) 
-- ✅ **PWA**: Install prompt appears and works offline
-- ✅ **Exports**: PDF, PNG, CSV, JSON exports function
-- ✅ **i18n**: English/Arabic language switching works
-- ✅ **Mobile**: Responsive design on phone/tablet
+This project is configured for automatic deployment on Render.com.
 
-### **Build Process**
+### Prerequisites
+- GitHub repository connected to Render
+- Node.js 18+ environment
+- pnpm 8+ package manager
+
+## 📋 Deployment Steps
+
+### 1. Connect to Render
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click "New +" → "Web Service"
+3. Connect your GitHub repository
+4. Select the main branch
+
+### 2. Configure Service
+- **Name**: `gutenberg-characters` (or your preferred name)
+- **Environment**: `Node`
+- **Region**: Choose closest to your users
+- **Branch**: `main`
+- **Root Directory**: Leave empty (root of repository)
+
+### 3. Build & Start Commands
+The `render.yaml` file automatically configures these, but you can also set them manually:
+
+**Build Command:**
 ```bash
-cd client
-npm run build    # Creates optimized production build
-npm run preview  # Test production build locally
+export NODE_ENV=production
+export NODE_OPTIONS="--max-old-space-size=4096"
+export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+
+if ! command -v pnpm &> /dev/null; then
+  npm install -g pnpm@8
+fi
+
+pnpm store prune || true
+rm -rf client/dist server/dist
+pnpm install --frozen-lockfile --prefer-offline=false --network-timeout=300000
+pnpm run build --workspace=client
+pnpm run build --workspace=server
 ```
 
-### **Deployment Platforms**
-
-#### **Vercel (Recommended)**
+**Start Command:**
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-cd client
-vercel
-
-# Custom domain
-vercel --prod
+cd server && pnpm start
 ```
 
-#### **Netlify**
+### 4. Environment Variables
+These are automatically set via `render.yaml`:
+- `NODE_ENV=production`
+- `PORT=10000`
+- `NPM_CONFIG_REGISTRY=https://registry.npmjs.org/`
+- `PNPM_HOME=$HOME/.local/share/pnpm`
+- `NODE_OPTIONS=--max-old-space-size=4096`
+
+### 5. Deploy
+Click "Create Web Service" and wait for the build to complete.
+
+## 🔧 Local Testing
+
+### Test Production Build Locally
 ```bash
-# Build and deploy
-cd client
-npm run build
+# Make build script executable
+chmod +x build-production.sh
 
-# Drag dist/ folder to netlify.com
-# Or use Netlify CLI
-netlify deploy --prod --dir=dist
+# Run production build
+./build-production.sh
+
+# Start production server
+pnpm start
 ```
 
-#### **GitHub Pages**
+### Test Windows Build
 ```bash
-# Install gh-pages
-npm install --save-dev gh-pages
-
-# Add to package.json scripts:
-"deploy": "gh-pages -d dist"
-
-# Deploy
-npm run build
-npm run deploy
+# Run Windows build script
+build.bat
 ```
 
-### **Environment Configuration**
+## 📁 File Structure After Build
 
-#### **Production Environment Variables**
-```env
-# .env.production
-NODE_ENV=production
-VITE_PWA_ENABLED=true
-VITE_ANALYTICS_ENABLED=false
-VITE_CACHE_SIZE_MB=500
-VITE_TARGET_FPS=50
+```
+your-project/
+├── client/
+│   └── dist/          # Built frontend files
+├── server/
+│   └── dist/          # Built backend files
+└── ... (other files)
 ```
 
-#### **Platform-Specific Settings**
+## 🌐 Production URLs
 
-**Vercel (vercel.json):**
-```json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
-      ]
-    }
-  ]
-}
+- **API Endpoints**: `https://your-app-name.onrender.com/api/*`
+- **Health Check**: `https://your-app-name.onrender.com/health`
+- **Frontend**: `https://your-app-name.onrender.com/`
+
+## 🔍 Troubleshooting
+
+### Build Failures
+1. Check Render build logs for specific errors
+2. Verify all configuration files are committed
+3. Ensure Node.js version compatibility
+4. Check network access to npm registry
+
+### Runtime Errors
+1. Verify environment variables are set
+2. Check server logs for error details
+3. Ensure PORT is accessible
+4. Verify CORS configuration
+
+### Common Issues
+- **Port conflicts**: Ensure PORT environment variable is set
+- **Missing dependencies**: Check package.json and pnpm-lock.yaml
+- **Build timeout**: Increase build timeout in Render settings
+- **Memory issues**: Use paid plan for more memory
+
+## 📊 Monitoring
+
+### Health Checks
+- `/health` - Basic health check
+- `/api/health` - API health check
+
+### Logs
+- View real-time logs in Render dashboard
+- Check build logs for deployment issues
+- Monitor runtime logs for errors
+
+## 🔄 Auto-Deploy
+
+The service is configured to automatically deploy when you push to the main branch. To disable:
+1. Go to service settings in Render dashboard
+2. Toggle "Auto-Deploy" off
+
+## 📝 Customization
+
+### Change App Name
+Update `render.yaml`:
+```yaml
+name: your-custom-name
 ```
 
-**Netlify (_redirects):**
-```
-/*    /index.html   200
-```
-
-### **Performance Optimization**
-
-#### **Build Optimizations**
-- ✅ **Code Splitting**: Automatic chunks for better loading
-- ✅ **Tree Shaking**: Removes unused code
-- ✅ **Compression**: Gzip/Brotli enabled
-- ✅ **Asset Optimization**: Images and fonts optimized
-
-#### **Runtime Optimizations**
-- ✅ **Service Worker**: Caches assets for offline use
-- ✅ **Web Workers**: Heavy computation in background
-- ✅ **IndexedDB**: Smart data persistence
-- ✅ **Lazy Loading**: Components load as needed
-
-### **Security Headers**
-
-```nginx
-# Nginx configuration
-add_header X-Frame-Options "DENY" always;
-add_header X-Content-Type-Options "nosniff" always;
-add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://gutendx.com https://www.gutenberg.org http://localhost:11434;" always;
+### Add Custom Environment Variables
+Add to `render.yaml`:
+```yaml
+envVars:
+  - key: CUSTOM_VAR
+    value: custom_value
 ```
 
-### **Monitoring & Analytics**
+### Modify Build Process
+Edit the `buildCommand` section in `render.yaml` to customize the build process.
 
-#### **Performance Monitoring**
-```typescript
-// Optional: Add performance tracking
-if (process.env.NODE_ENV === 'production') {
-  // Web Vitals tracking
-  import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-    getCLS(console.log)
-    getFID(console.log) 
-    getFCP(console.log)
-    getLCP(console.log)
-    getTTFB(console.log)
-  })
-}
-```
+## 🎯 Success Indicators
 
-#### **Error Tracking**
-```typescript
-// Optional: Add error tracking
-window.addEventListener('error', (event) => {
-  // Log to your preferred service
-  console.error('Application error:', event.error)
-})
-```
+✅ Build completes without errors  
+✅ Service starts successfully  
+✅ Health checks pass  
+✅ API endpoints respond  
+✅ Frontend loads correctly  
+✅ No runtime errors in logs  
 
-### **Post-Deployment Testing**
+## 📞 Support
 
-#### **Manual Testing Checklist**
-1. **Load Performance**: First page load <3 seconds
-2. **Analysis Flow**: Complete book analysis end-to-end
-3. **Graph Interaction**: Smooth ≥50 FPS performance
-4. **Export Functions**: All export formats work
-5. **Mobile Experience**: Touch interactions responsive
-6. **PWA Installation**: Install prompt and offline mode
-7. **Language Switching**: English/Arabic transition
-8. **Privacy Controls**: Local-only mode functions
-
-#### **Automated Testing**
-```bash
-# Lighthouse CI (optional)
-npm install -g @lhci/cli
-lhci autorun
-
-# Performance testing
-npm run test:performance
-
-# E2E testing
-npm run test:e2e
-```
-
-### **Domain & SSL Setup**
-
-#### **Custom Domain**
-1. **DNS Configuration**: Point domain to hosting platform
-2. **SSL Certificate**: Automatic via platform (Vercel/Netlify)
-3. **HTTPS Redirect**: Ensure all traffic uses HTTPS
-4. **WWW Redirect**: Choose www or non-www consistently
-
-#### **CDN Configuration**
-- ✅ **Static Assets**: Serve from CDN for global performance
-- ✅ **Cache Headers**: Appropriate cache duration for different file types
-- ✅ **Compression**: Gzip/Brotli for all text assets
-
-### **Backup & Recovery**
-
-#### **Source Code**
-- ✅ **Git Repository**: All code in version control
-- ✅ **Deployment Scripts**: Automated deployment process
-- ✅ **Environment Configs**: Documented environment variables
-
-#### **User Data**
-- ✅ **Local Storage**: Users maintain their own data
-- ✅ **Export Options**: Users can backup their analyses
-- ✅ **Privacy Compliant**: No server-side user data storage
-
-### **Production Checklist**
-
-#### **Before Launch**
-- [ ] **Build Success**: Production build completes without errors
-- [ ] **Performance Test**: All acceptance criteria met
-- [ ] **Security Scan**: No vulnerabilities in dependencies
-- [ ] **Accessibility Test**: WCAG compliance verified
-- [ ] **Cross-Browser**: Works in Chrome, Firefox, Safari, Edge
-- [ ] **Mobile Test**: iOS and Android functionality confirmed
-
-#### **Launch Day**
-- [ ] **Deploy**: Push to production environment
-- [ ] **DNS**: Update domain configuration if needed
-- [ ] **Monitor**: Watch for errors and performance issues
-- [ ] **Test**: Verify all features work in production
-- [ ] **Document**: Update README with production URL
-
-#### **Post-Launch**
-- [ ] **Performance**: Monitor real user metrics
-- [ ] **Errors**: Set up error tracking and alerting
-- [ ] **Updates**: Plan regular dependency updates
-- [ ] **Feedback**: Collect and respond to user feedback
-
----
-
-**🎯 Ready for Production!**
-
-Your Gutenberg Character Analysis app is fully optimized and ready for deployment with enterprise-grade performance and reliability.
+If you encounter issues:
+1. Check Render documentation
+2. Review build and runtime logs
+3. Verify configuration files
+4. Test locally before deploying

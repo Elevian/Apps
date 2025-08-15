@@ -4,6 +4,7 @@ services:
     env: node
     buildCommand: |
       # Set environment variables for better reliability
+      export NODE_ENV=production
       export NODE_OPTIONS="--max-old-space-size=4096"
       export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
       export PNPM_HOME="$HOME/.local/share/pnpm"
@@ -14,20 +15,30 @@ services:
         npm install -g pnpm@8
       fi
       
-      # Clear any existing caches
-      pnpm store prune
+      # Clear any existing caches and old builds
+      pnpm store prune || true
+      rm -rf client/dist server/dist
       
       # Install dependencies with retry logic
       pnpm install --frozen-lockfile --prefer-offline=false --network-timeout=300000
       
-      # Build the application
-      pnpm run build
+      # Build both client and server
+      pnpm run build --workspace=client
+      pnpm run build --workspace=server
+      
+      # Verify builds
+      if [ ! -d "client/dist" ] || [ ! -d "server/dist" ]; then
+        echo "❌ Build verification failed"
+        exit 1
+      fi
     startCommand: |
       # Start the server
       cd server && pnpm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: NPM_CONFIG_REGISTRY
         value: https://registry.npmjs.org/
       - key: PNPM_HOME

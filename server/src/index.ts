@@ -22,15 +22,20 @@
 
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
+import compression from 'compression'
 import gutenbergRoutes from './routes/gutenberg'
 import analyzeRoutes from './routes/analyze'
 
 const app = express()
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 10000
 
 // Middleware
+app.use(compression())
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-app-name.onrender.com'] // Replace with your actual Render URL
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'],
   credentials: true
 }))
 app.use(express.json({ limit: '50mb' }))
@@ -47,11 +52,32 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true })
 })
 
+// Root health check for Render
+app.get('/health', (req, res) => {
+  res.json({ 
+    ok: true, 
+    timestamp: new Date().toISOString(),
+    service: 'gutenberg-characters-api'
+  })
+})
+
 // Gutenberg routes
 app.use('/api/gutenberg', gutenbergRoutes)
 
 // Analysis routes
 app.use('/api/analyze', analyzeRoutes)
+
+// Serve static files from client build
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../client/dist')))
+  
+  // Handle client routing - serve index.html for all non-API routes
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
+    }
+  })
+}
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
