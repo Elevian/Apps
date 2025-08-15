@@ -18,14 +18,22 @@ services:
       npm install
       
       # Build both client and server
-      npm run build --workspace=client
-      npm run build --workspace=server
+      npm run build
       
       # Verify builds
-      if [ ! -d "client/dist" ] || [ ! -d "server/dist" ]; then
-        echo "❌ Build verification failed"
+      if [ ! -d "client/dist" ]; then
+        echo "❌ Client build failed - dist directory not found"
         exit 1
       fi
+      
+      if [ ! -d "server/dist" ]; then
+        echo "❌ Server build failed - dist directory not found"
+        exit 1
+      fi
+      
+      echo "✅ Build verification passed"
+      echo "📁 Client build: $(ls -la client/dist | wc -l) files"
+      echo "📁 Server build: $(ls -la server/dist | wc -l) files"
     
     startCommand: |
       cd server && npm start

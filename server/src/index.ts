@@ -23,6 +23,7 @@
 import express from 'express'
 import cors from 'cors'
 import path from 'path'
+import fs from 'fs'
 import compression from 'compression'
 import gutenbergRoutes from './routes/gutenberg'
 import analyzeRoutes from './routes/analyze'
@@ -34,7 +35,7 @@ const PORT = process.env.PORT || 10000
 app.use(compression())
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-app-name.onrender.com'] // Replace with your actual Render URL
+    ? true // Allow all origins in production (Render will handle this)
     : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'],
   credentials: true
 }))
@@ -67,15 +68,38 @@ app.use('/api/gutenberg', gutenbergRoutes)
 // Analysis routes
 app.use('/api/analyze', analyzeRoutes)
 
+// Add a catch-all for API routes that don't exist
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'API endpoint not found',
+    path: req.originalUrl,
+    availableEndpoints: [
+      'GET /api/health',
+      'GET /api/gutenberg/resolve/:id',
+      'GET /api/gutenberg/text/:id',
+      'GET /api/gutenberg/text/:id/preview',
+      'POST /api/analyze/characters',
+      'GET /api/analyze/health',
+      'GET /api/analyze/models'
+    ]
+  })
+})
+
 // Serve static files from client build
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../client/dist')))
+  const clientDistPath = path.join(__dirname, '../../client/dist')
+  app.use(express.static(clientDistPath))
   
   // Handle client routing - serve index.html for all non-API routes
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api/')) {
-      res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
-    }
+          if (!req.path.startsWith('/api/')) {
+        const indexPath = path.join(clientDistPath, 'index.html')
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath)
+        } else {
+          res.status(404).json({ error: 'Client build not found' })
+        }
+      }
   })
 }
 

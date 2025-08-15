@@ -68,6 +68,7 @@ export default defineConfig({
   // Optimize for production
   build: {
     target: 'esnext',
+    outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -92,8 +93,11 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://gutenberg-characters.onrender.com'
+          : 'http://localhost:10000',
         changeOrigin: true,
+        secure: false,
       },
     },
     // Optimize dev server
