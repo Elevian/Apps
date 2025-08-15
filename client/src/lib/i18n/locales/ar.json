@@ -1,0 +1,281 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "copy": "نسخ",
+    "export": "تصدير",
+    "import": "استيراد",
+    "refresh": "تحديث",
+    "search": "بحث",
+    "filter": "تصفية",
+    "close": "إغلاق",
+    "open": "فتح",
+    "toggle": "تبديل",
+    "settings": "الإعدادات",
+    "help": "مساعدة",
+    "about": "حول",
+    "language": "اللغة",
+    "theme": "المظهر"
+  },
+  
+  "navigation": {
+    "skipToContent": "الانتقال إلى المحتوى الرئيسي",
+    "mainNavigation": "التنقل الرئيسي",
+    "sectionAnalyzer": "الانتقال إلى المحلل",
+    "sectionGraph": "الانتقال إلى الرسم البياني",
+    "sectionInsights": "الانتقال إلى التحليلات",
+    "sectionDiscovery": "الانتقال إلى أدوات الاستكشاف",
+    "sectionAbout": "الانتقال إلى حول"
+  },
+  
+  "hero": {
+    "title": "تحليل شخصيات جوتنبرغ",
+    "subtitle": "اكتشف العلاقات الخفية في الأدب",
+    "description": "حلل تفاعلات الشخصيات والمشاعر وأنماط السرد في كتب مشروع جوتنبرغ باستخدام الذكاء الاصطناعي المتقدم وتحليل الشبكات.",
+    "getStarted": "ابدأ الآن",
+    "learnMore": "اعرف المزيد"
+  },
+  
+  "analyzer": {
+    "title": "محلل الكتب",
+    "subtitle": "أدخل معرف كتاب من مشروع جوتنبرغ لبدء التحليل",
+    "bookIdLabel": "معرف كتاب جوتنبرغ",
+    "bookIdPlaceholder": "أدخل معرف الكتاب (مثل: 1342 لرواية الكبرياء والهوى)",
+    "analyzeButton": "تحليل الكتاب",
+    "forceRecompute": "إعادة حساب قسري",
+    "analyzing": "جاري التحليل...",
+    "currentStep": "الخطوة الحالية",
+    "progress": "التقدم",
+    "fromCache": "من التخزين المؤقت",
+    "complete": "اكتمل التحليل",
+    "error": "خطأ في التحليل",
+    "invalidBookId": "يرجى إدخال معرف كتاب رقمي صحيح",
+    "noBookFound": "لم يتم العثور على الكتاب. يرجى التحقق من المعرف والمحاولة مرة أخرى.",
+    "steps": {
+      "init": "بدء التحليل",
+      "fetch": "جلب نص الكتاب",
+      "parse": "تحليل الفصول والجمل",
+      "characters": "استخراج الشخصيات",
+      "cooccurrence": "بناء شبكة العلاقات",
+      "metrics": "حساب مقاييس الشبكة",
+      "sentiment": "تحليل المشاعر",
+      "topics": "استخراج المواضيع",
+      "complete": "اكتمل التحليل"
+    }
+  },
+  
+  "graph": {
+    "title": "شبكة الشخصيات",
+    "subtitle": "تصور تفاعلي لعلاقات الشخصيات",
+    "modes": {
+      "default": "افتراضي",
+      "ego": "عرض الذات",
+      "community": "المجتمعات"
+    },
+    "controls": {
+      "title": "عناصر التحكم في الرسم البياني",
+      "sentenceWindow": "نافذة الجملة",
+      "minEdgeWeight": "الحد الأدنى لوزن الحافة",
+      "nodeSize": "حجم العقدة",
+      "linkWidth": "عرض الرابط",
+      "showLabels": "إظهار التسميات",
+      "pinNodes": "تثبيت العقد",
+      "highlightNeighbors": "تمييز الجيران",
+      "physics": "محاكاة الفيزياء"
+    },
+    "export": {
+      "png": "تصدير PNG",
+      "json": "تصدير JSON",
+      "csv": "تصدير CSV",
+      "gexf": "تصدير GEXF"
+    },
+    "layout": {
+      "fitView": "ملاءمة العرض",
+      "resetLayout": "إعادة تعيين التخطيط",
+      "pauseSimulation": "إيقاف المحاكاة مؤقتاً"
+    },
+    "stats": {
+      "nodes": "عقد",
+      "edges": "حواف",
+      "density": "الكثافة",
+      "avgDegree": "متوسط الدرجة",
+      "components": "المكونات",
+      "modularity": "النمطية"
+    }
+  },
+  
+  "insights": {
+    "title": "رؤى الشخصيات",
+    "subtitle": "تحليل عميق لأهمية الشخصيات وعلاقاتها",
+    "rankings": "ترتيب الشخصيات",
+    "mentions": "ذكريات الفصول",
+    "quotes": "اقتباسات الشخصيات",
+    "sentiment": "تحليل المشاعر",
+    "noData": "لا توجد بيانات تحليل متاحة",
+    "generateInsights": "إنشاء رؤى"
+  },
+  
+  "discovery": {
+    "title": "أدوات الاستكشاف والتحليل",
+    "subtitle": "ميزات متقدمة لتحليل أدبي أعمق",
+    
+    "comparison": {
+      "title": "مقارنة كتابين",
+      "subtitle": "تحليل جنباً إلى جنب لشبكات الشخصيات والمواضيع",
+      "compareWith": "مقارنة مع معرف الكتاب",
+      "startComparison": "بدء المقارنة",
+      "currentBook": "الكتاب الحالي",
+      "comparisonResults": "نتائج المقارنة",
+      "metrics": {
+        "similarityIndex": "مؤشر التشابه",
+        "characterOverlap": "تداخل الشخصيات",
+        "densityRatio": "نسبة الكثافة",
+        "degreeRatio": "نسبة الدرجة",
+        "sentimentDiff": "اختلاف المشاعر",
+        "complexityScore": "درجة التعقيد"
+      },
+      "overlay": {
+        "title": "تراكب الشبكة",
+        "showOverlay": "إظهار التراكب",
+        "separate": "منفصل",
+        "merged": "مدمج"
+      }
+    },
+    
+    "disambiguation": {
+      "title": "مساعد توضيح الأسماء",
+      "subtitle": "اقتراح دمج أسماء الشخصيات مع تسجيل الثقة",
+      "analyzeNames": "تحليل الأسماء",
+      "noSuggestions": "لم يتم العثور على اقتراحات دمج",
+      "highConfidence": "ثقة عالية",
+      "bulkApply": "تطبيق الثقة العالية",
+      "acceptMerge": "قبول الدمج",
+      "rejectMerge": "رفض",
+      "confidence": {
+        "high": "عالية",
+        "medium": "متوسطة",
+        "low": "منخفضة"
+      },
+      "mergeTypes": {
+        "exact": "تطابق تام",
+        "title": "تغيير اللقب",
+        "prefix": "تطابق البادئة",
+        "fuzzy": "أسماء متشابهة"
+      }
+    },
+    
+    "readingGuide": {
+      "title": "دليل القراءة",
+      "subtitle": "ملخصات فصول وتحليل منشأة تلقائياً",
+      "generateSummaries": "إنشاء ملخصات",
+      "useOllama": "استخدام Ollama LLM",
+      "copyAll": "نسخ جميع الملخصات",
+      "expandAll": "توسيع الكل",
+      "collapseAll": "طي الكل",
+      "chapterSummary": "ملخص الفصل",
+      "keyTopics": "المواضيع الرئيسية",
+      "readingTime": "وقت القراءة",
+      "wordCount": "عدد الكلمات",
+      "confidence": "الثقة",
+      "sentiment": {
+        "positive": "إيجابي",
+        "negative": "سلبي",
+        "neutral": "محايد"
+      },
+      "generationMethod": {
+        "ollama": "منشأ بالذكاء الاصطناعي",
+        "tfidf": "مبني على الكلمات المفتاحية"
+      }
+    }
+  },
+  
+  "commandPalette": {
+    "placeholder": "البحث في الأوامر...",
+    "sections": {
+      "analysis": "التحليل",
+      "visualization": "التصور",
+      "export": "التصدير",
+      "appearance": "المظهر",
+      "navigation": "التنقل",
+      "help": "المساعدة"
+    },
+    "commands": {
+      "analyzeBook": "تحليل كتاب",
+      "forceRecompute": "إعادة حساب التحليل قسرياً",
+      "compareBooks": "مقارنة كتابين",
+      "disambiguateNames": "توضيح أسماء الشخصيات",
+      "generateGuide": "إنشاء دليل القراءة",
+      "toggleLabels": "تبديل تسميات العقد",
+      "hideLabels": "إخفاء تسميات العقد",
+      "showLabels": "إظهار تسميات العقد",
+      "fitView": "ملاءمة الرسم البياني للعرض",
+      "resetLayout": "إعادة تعيين تخطيط الرسم البياني",
+      "exportPNG": "تصدير الرسم البياني كـ PNG",
+      "exportJSON": "تصدير البيانات كـ JSON",
+      "exportCSV": "تصدير البيانات كـ CSV",
+      "copyLink": "نسخ رابط التحليل",
+      "lightTheme": "التبديل إلى المظهر الفاتح",
+      "darkTheme": "التبديل إلى المظهر الداكن",
+      "systemTheme": "استخدام مظهر النظام",
+      "scrollToGraph": "الانتقال إلى قسم الرسم البياني",
+      "scrollToInsights": "الانتقال إلى قسم التحليلات",
+      "scrollToAnalyzer": "الانتقال إلى قسم المحلل",
+      "keyboardShortcuts": "إظهار اختصارات لوحة المفاتيح",
+      "aboutApp": "حول جوتنبرغ إنسايتس"
+    }
+  },
+  
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام",
+    "switchTheme": "تبديل المظهر"
+  },
+  
+  "accessibility": {
+    "announcements": "الإعلانات",
+    "screenReaderOnly": "قارئ الشاشة فقط",
+    "expandedCollapsed": "موسع، مطوي",
+    "selected": "محدد",
+    "loading": "جاري التحميل",
+    "graphDescription": "رسم بياني تفاعلي لشبكة الشخصيات يظهر العلاقات بين الشخصيات",
+    "chartDescription": "مخطط يظهر بيانات تحليل الشخصيات"
+  },
+  
+  "offline": {
+    "banner": "أنت غير متصل حالياً. قد تكون بعض الميزات محدودة.",
+    "status": "حالة الاتصال",
+    "online": "متصل",
+    "offline": "غير متصل"
+  },
+  
+  "footer": {
+    "poweredBy": "مشغل بواسطة",
+    "madeWith": "صنع بـ",
+    "openSource": "مفتوح المصدر",
+    "version": "الإصدار",
+    "language": "اللغة",
+    "theme": "المظهر"
+  },
+  
+  "errors": {
+    "general": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+    "notFound": "المورد غير موجود.",
+    "unauthorized": "وصول غير مصرح به.",
+    "bookNotFound": "لم يتم العثور على الكتاب. يرجى التحقق من المعرف.",
+    "analysisError": "فشل التحليل. يرجى المحاولة مرة أخرى.",
+    "exportError": "فشل التصدير. يرجى المحاولة مرة أخرى."
+  },
+  
+  "success": {
+    "analysisComplete": "اكتمل التحليل بنجاح!",
+    "exported": "تم تصدير البيانات بنجاح!",
+    "copied": "تم النسخ إلى الحافظة!",
+    "saved": "تم حفظ الإعدادات!"
+  }
+}

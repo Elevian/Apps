@@ -1,0 +1,281 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "open": "Open",
+    "toggle": "Toggle",
+    "settings": "Settings",
+    "help": "Help",
+    "about": "About",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  
+  "navigation": {
+    "skipToContent": "Skip to main content",
+    "mainNavigation": "Main navigation",
+    "sectionAnalyzer": "Go to Analyzer",
+    "sectionGraph": "Go to Graph",
+    "sectionInsights": "Go to Insights",
+    "sectionDiscovery": "Go to Discovery Tools",
+    "sectionAbout": "Go to About"
+  },
+  
+  "hero": {
+    "title": "Gutenberg Character Analysis",
+    "subtitle": "Discover the hidden relationships in literature",
+    "description": "Analyze character interactions, sentiment, and narrative patterns in Project Gutenberg books using advanced AI and network analysis.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More"
+  },
+  
+  "analyzer": {
+    "title": "Book Analyzer",
+    "subtitle": "Enter a Project Gutenberg book ID to begin analysis",
+    "bookIdLabel": "Gutenberg Book ID",
+    "bookIdPlaceholder": "Enter book ID (e.g., 1342 for Pride and Prejudice)",
+    "analyzeButton": "Analyze Book",
+    "forceRecompute": "Force Re-compute",
+    "analyzing": "Analyzing...",
+    "currentStep": "Current Step",
+    "progress": "Progress",
+    "fromCache": "From Cache",
+    "complete": "Analysis Complete",
+    "error": "Analysis Error",
+    "invalidBookId": "Please enter a valid numeric book ID",
+    "noBookFound": "Book not found. Please check the ID and try again.",
+    "steps": {
+      "init": "Initializing analysis",
+      "fetch": "Fetching book text",
+      "parse": "Parsing chapters and sentences",
+      "characters": "Extracting characters",
+      "cooccurrence": "Building relationship network",
+      "metrics": "Calculating network metrics",
+      "sentiment": "Analyzing sentiment",
+      "topics": "Extracting topics",
+      "complete": "Analysis complete"
+    }
+  },
+  
+  "graph": {
+    "title": "Character Network",
+    "subtitle": "Interactive visualization of character relationships",
+    "modes": {
+      "default": "Default",
+      "ego": "Ego View",
+      "community": "Communities"
+    },
+    "controls": {
+      "title": "Graph Controls",
+      "sentenceWindow": "Sentence Window",
+      "minEdgeWeight": "Min Edge Weight",
+      "nodeSize": "Node Size",
+      "linkWidth": "Link Width",
+      "showLabels": "Show Labels",
+      "pinNodes": "Pin Nodes",
+      "highlightNeighbors": "Highlight Neighbors",
+      "physics": "Physics Simulation"
+    },
+    "export": {
+      "png": "Export PNG",
+      "json": "Export JSON",
+      "csv": "Export CSV",
+      "gexf": "Export GEXF"
+    },
+    "layout": {
+      "fitView": "Fit to View",
+      "resetLayout": "Reset Layout",
+      "pauseSimulation": "Pause Simulation"
+    },
+    "stats": {
+      "nodes": "nodes",
+      "edges": "edges",
+      "density": "Density",
+      "avgDegree": "Avg Degree",
+      "components": "Components",
+      "modularity": "Modularity"
+    }
+  },
+  
+  "insights": {
+    "title": "Character Insights",
+    "subtitle": "Deep analysis of character importance and relationships",
+    "rankings": "Character Rankings",
+    "mentions": "Chapter Mentions",
+    "quotes": "Character Quotes",
+    "sentiment": "Sentiment Analysis",
+    "noData": "No analysis data available",
+    "generateInsights": "Generate Insights"
+  },
+  
+  "discovery": {
+    "title": "Discovery & Analysis Tools",
+    "subtitle": "Advanced features for deeper literary analysis",
+    
+    "comparison": {
+      "title": "Compare Two Books",
+      "subtitle": "Side-by-side analysis of character networks and themes",
+      "compareWith": "Compare with Book ID",
+      "startComparison": "Start Comparison",
+      "currentBook": "Current Book",
+      "comparisonResults": "Comparison Results",
+      "metrics": {
+        "similarityIndex": "Similarity Index",
+        "characterOverlap": "Character Overlap",
+        "densityRatio": "Density Ratio",
+        "degreeRatio": "Degree Ratio",
+        "sentimentDiff": "Sentiment Difference",
+        "complexityScore": "Complexity Score"
+      },
+      "overlay": {
+        "title": "Network Overlay",
+        "showOverlay": "Show Overlay",
+        "separate": "Separate",
+        "merged": "Merged"
+      }
+    },
+    
+    "disambiguation": {
+      "title": "Name Disambiguation Helper",
+      "subtitle": "Suggest character name merges with confidence scoring",
+      "analyzeNames": "Analyze Names",
+      "noSuggestions": "No merge suggestions found",
+      "highConfidence": "High Confidence",
+      "bulkApply": "Apply High Confidence",
+      "acceptMerge": "Accept Merge",
+      "rejectMerge": "Reject",
+      "confidence": {
+        "high": "High",
+        "medium": "Medium", 
+        "low": "Low"
+      },
+      "mergeTypes": {
+        "exact": "Exact match",
+        "title": "Title variation",
+        "prefix": "Prefix match",
+        "fuzzy": "Similar names"
+      }
+    },
+    
+    "readingGuide": {
+      "title": "Reading Guide",
+      "subtitle": "Auto-generated chapter summaries and analysis",
+      "generateSummaries": "Generate Summaries",
+      "useOllama": "Use Ollama LLM",
+      "copyAll": "Copy All Summaries",
+      "expandAll": "Expand All",
+      "collapseAll": "Collapse All",
+      "chapterSummary": "Chapter Summary",
+      "keyTopics": "Key Topics",
+      "readingTime": "Reading Time",
+      "wordCount": "Word Count",
+      "confidence": "Confidence",
+      "sentiment": {
+        "positive": "Positive",
+        "negative": "Negative",
+        "neutral": "Neutral"
+      },
+      "generationMethod": {
+        "ollama": "AI Generated",
+        "tfidf": "Keyword Based"
+      }
+    }
+  },
+  
+  "commandPalette": {
+    "placeholder": "Search commands...",
+    "sections": {
+      "analysis": "Analysis",
+      "visualization": "Visualization", 
+      "export": "Export",
+      "appearance": "Appearance",
+      "navigation": "Navigation",
+      "help": "Help"
+    },
+    "commands": {
+      "analyzeBook": "Analyze Book",
+      "forceRecompute": "Force Re-compute Analysis",
+      "compareBooks": "Compare Two Books",
+      "disambiguateNames": "Disambiguate Character Names",
+      "generateGuide": "Generate Reading Guide",
+      "toggleLabels": "Toggle Node Labels",
+      "hideLabels": "Hide Node Labels",
+      "showLabels": "Show Node Labels",
+      "fitView": "Fit Graph to View",
+      "resetLayout": "Reset Graph Layout",
+      "exportPNG": "Export Graph as PNG",
+      "exportJSON": "Export Data as JSON",
+      "exportCSV": "Export Data as CSV",
+      "copyLink": "Copy Analysis Link",
+      "lightTheme": "Switch to Light Theme",
+      "darkTheme": "Switch to Dark Theme",
+      "systemTheme": "Use System Theme",
+      "scrollToGraph": "Go to Graph Section",
+      "scrollToInsights": "Go to Insights Section",
+      "scrollToAnalyzer": "Go to Analyzer Section",
+      "keyboardShortcuts": "Show Keyboard Shortcuts",
+      "aboutApp": "About Gutenberg Insights"
+    }
+  },
+  
+  "theme": {
+    "light": "Light",
+    "dark": "Dark", 
+    "system": "System",
+    "switchTheme": "Switch theme"
+  },
+  
+  "accessibility": {
+    "announcements": "Announcements",
+    "screenReaderOnly": "Screen reader only",
+    "expandedCollapsed": "Expanded, collapsed",
+    "selected": "Selected",
+    "loading": "Loading",
+    "graphDescription": "Interactive character network graph showing relationships between characters",
+    "chartDescription": "Chart showing character analysis data"
+  },
+  
+  "offline": {
+    "banner": "You're currently offline. Some features may be limited.",
+    "status": "Connection Status",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  
+  "footer": {
+    "poweredBy": "Powered by",
+    "madeWith": "Made with",
+    "openSource": "Open Source",
+    "version": "Version",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  
+  "errors": {
+    "general": "Something went wrong. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "notFound": "Resource not found.",
+    "unauthorized": "Unauthorized access.",
+    "bookNotFound": "Book not found. Please check the ID.",
+    "analysisError": "Analysis failed. Please try again.",
+    "exportError": "Export failed. Please try again."
+  },
+  
+  "success": {
+    "analysisComplete": "Analysis completed successfully!",
+    "exported": "Data exported successfully!",
+    "copied": "Copied to clipboard!",
+    "saved": "Settings saved!"
+  }
+}
