@@ -88,7 +88,9 @@ app.use('/api/*', (req, res) => {
 // Serve static files from client build
 // Try multiple possible locations for the client build
 const possibleClientPaths = [
-  path.join(__dirname, '../../client/dist'),           // Relative to server/dist
+  path.join(__dirname, 'client'),                     // Runtime location: server/dist/client
+  path.join(__dirname, '../client'),                  // Alternative: server/client
+  path.join(__dirname, '../../client/dist'),          // Relative to server/dist
   path.join(__dirname, '../client/dist'),             // Relative to server/dist (alternative)
   path.join(__dirname, '../client-dist'),             // Copied client files in server directory
   path.join(process.cwd(), 'client/dist'),            // From project root

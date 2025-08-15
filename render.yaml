@@ -24,6 +24,8 @@ services:
         exit 1
       fi
       echo "✅ Client build successful"
+      echo "📁 Client dist contents:"
+      ls -la client/dist/
       
       # Build server
       echo "🔨 Building server..."
@@ -38,15 +40,16 @@ services:
       fi
       echo "✅ Server build successful - dist/index.js exists"
       
-      # Copy client build to server directory for easier access
-      echo "📁 Copying client build to server directory..."
-      cp -r ../client/dist ./client-dist
+      # Copy client build to server dist directory for runtime access
+      echo "📁 Copying client build to server/dist/client..."
+      mkdir -p dist/client
+      cp -r ../client/dist/* dist/client/
       
       # Verify client files are accessible from server
-      if [ -f "client-dist/index.html" ]; then
-        echo "✅ Client files copied successfully to server/client-dist"
-        echo "📁 Client files available at: $(pwd)/client-dist"
-        ls -la client-dist/
+      if [ -f "dist/client/index.html" ]; then
+        echo "✅ Client files copied successfully to server/dist/client"
+        echo "📁 Server dist/client contents:"
+        ls -la dist/client/
       else
         echo "❌ Failed to copy client files"
         exit 1
