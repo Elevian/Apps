@@ -14,11 +14,7 @@ import {
   AnalysisHealth,
   AnalysisHealthSchema
 } from './schemas'
-
-// API Configuration
-// To customize the API URL, create a .env.local file in the client directory with:
-// VITE_API_BASE=http://localhost:4000/api
-const API_BASE_URL = (globalThis as any).__VITE_API_BASE__ || '/api'
+import { API_BASE_URL, ENDPOINTS } from '../config/api'
 
 export class GutenbergApiError extends Error {
   constructor(
@@ -151,7 +147,7 @@ export const gutenbergApi = {
    */
   async resolveBook(id: string): Promise<BookResolve> {
     const validatedId = BookIdSchema.parse({ id })
-    const url = `${API_BASE_URL}/gutenberg/resolve/${validatedId.id}`
+    const url = ENDPOINTS.gutenberg.resolve(validatedId.id)
     return fetchApi<BookResolve>(url, BookResolveSchema)
   },
 
@@ -160,7 +156,7 @@ export const gutenbergApi = {
    */
   async fetchText(id: string): Promise<BookText> {
     const validatedId = BookIdSchema.parse({ id })
-    const url = `${API_BASE_URL}/gutenberg/text/${validatedId.id}`
+    const url = ENDPOINTS.gutenberg.text(validatedId.id)
     return fetchApi<BookText>(url, BookTextSchema)
   },
 
@@ -169,7 +165,7 @@ export const gutenbergApi = {
    */
   async fetchPreview(id: string): Promise<BookPreview> {
     const validatedId = BookIdSchema.parse({ id })
-    const url = `${API_BASE_URL}/gutenberg/text/${validatedId.id}/preview`
+    const url = ENDPOINTS.gutenberg.preview(validatedId.id)
     return fetchApi<BookPreview>(url, BookPreviewSchema)
   },
 }
@@ -180,7 +176,7 @@ export const analysisApi = {
    */
   async analyzeCharacters(request: CharacterAnalysisRequest): Promise<CharacterAnalysisResult> {
     const validatedRequest = CharacterAnalysisRequestSchema.parse(request)
-    const url = `${API_BASE_URL}/analyze/characters`
+    const url = ENDPOINTS.analysis.characters
     return fetchApiPost<CharacterAnalysisResult>(url, validatedRequest, CharacterAnalysisResultSchema)
   },
 
@@ -188,7 +184,7 @@ export const analysisApi = {
    * Check analysis service health
    */
   async getHealth(): Promise<AnalysisHealth> {
-    const url = `${API_BASE_URL}/analyze/health`
+    const url = ENDPOINTS.analysis.health
     return fetchApi<AnalysisHealth>(url, AnalysisHealthSchema)
   },
 }

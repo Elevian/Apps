@@ -18,14 +18,14 @@
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noImplicitThis": false,
-    "types": []
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": false
   },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules", 
-    "dist", 
-    "../client/**/*",
-    "../node_modules/**/*"
+    "dist"
   ],
   "ts-node": {
     "esm": false

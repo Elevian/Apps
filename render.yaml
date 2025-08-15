@@ -11,29 +11,39 @@ services:
       export NODE_OPTIONS="--max-old-space-size=4096"
       export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
       
-      # Clear any existing caches and old builds
-      rm -rf client/dist server/dist
-      
-      # Install dependencies with npm
+      # Install dependencies
       npm install
       
-      # Build both client and server
-      npm run build
+      # Build client
+      cd client && npm run build && cd ..
       
-      # Verify builds
+      # Build server with verification
+      cd server
+      npm install
+      npx tsc
+      
+      # Verify server build
+      if [ ! -f "dist/index.js" ]; then
+        echo "❌ Server build failed - dist/index.js not found"
+        echo "📁 Server directory contents:"
+        ls -la
+        echo "📁 Server dist contents (if exists):"
+        ls -la dist/ 2>/dev/null || echo "dist/ directory not found"
+        exit 1
+      fi
+      
+      echo "✅ Server build successful - dist/index.js exists"
+      echo "📁 Server dist contents:"
+      ls -la dist/
+      cd ..
+      
+      # Verify client build
       if [ ! -d "client/dist" ]; then
         echo "❌ Client build failed - dist directory not found"
         exit 1
       fi
       
-      if [ ! -d "server/dist" ]; then
-        echo "❌ Server build failed - dist directory not found"
-        exit 1
-      fi
-      
-      echo "✅ Build verification passed"
-      echo "📁 Client build: $(ls -la client/dist | wc -l) files"
-      echo "📁 Server build: $(ls -la server/dist | wc -l) files"
+      echo "✅ All builds successful"
     
     startCommand: |
       cd server && npm start

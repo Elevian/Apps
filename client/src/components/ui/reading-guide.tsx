@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { ChapterTopic } from '@/lib/analysis/topic-analysis'
 import { toast } from 'sonner'
+import { OLLAMA_CONFIG } from '../../lib/config/api'
 
 export interface ChapterSummary {
   chapterNumber: number
@@ -573,8 +574,8 @@ function ChapterSummaryCard({
  */
 async function checkOllamaAvailability(): Promise<boolean> {
   try {
-    // Try to reach Ollama API (usually on localhost:11434)
-    const response = await fetch('http://localhost:11434/api/tags', {
+    // Try to reach Ollama API using configured URL
+    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -632,7 +633,7 @@ function splitTextIntoChapters(text: string): Array<{ number: number, text: stri
  * Generate summary using Ollama LLM
  */
 async function generateOllamaSummary(
-  chapter: { number: number, text: string, title?: string }, 
+  chapter: { number: number; text: string; title?: string }, 
   chapterNumber: number
 ): Promise<ChapterSummary> {
   
@@ -640,11 +641,11 @@ async function generateOllamaSummary(
   const prompt = `Summarize this chapter in 2-3 sentences. Focus on key events, character developments, and plot progression:\n\n${chapter.text.slice(0, 2000)}...`
   
   try {
-    const response = await fetch('http://localhost:11434/api/generate', {
+    const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama2', // or whatever model is available
+        model: OLLAMA_CONFIG.defaultModel,
         prompt,
         stream: false
       })
@@ -667,7 +668,9 @@ async function generateOllamaSummary(
       confidence: 0.85
     }
   } catch (error) {
-    throw new Error('Ollama generation failed')
+    console.warn('Ollama summary generation failed:', error)
+    // Fallback to heuristic summary
+    return generateHeuristicSummary(chapter, chapterNumber)
   }
 }
 

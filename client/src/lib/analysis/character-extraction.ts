@@ -1,5 +1,6 @@
-import { Character } from '@/lib/api/schemas'
+import { Character } from '../api/schemas'
 import { extractCharactersWithGroq, isGroqAvailable } from '../api/groq-api'
+import { OLLAMA_CONFIG } from '../config/api'
 
 export interface ExtractedCharacter {
   id: string
@@ -13,19 +14,15 @@ export interface ExtractedCharacter {
 export interface CharacterExtractionOptions {
   useOllama?: boolean
   useGroq?: boolean
-  ollamaEndpoint?: string
   maxCharacters?: number
   minMentions?: number
-  mergeThreshold?: number // Similarity threshold for alias merging
+  mergeThreshold?: number
 }
 
-/**
- * Enhanced character extraction with LLM + compromise fallback
- */
 export class CharacterExtractor {
   private ollamaEndpoint: string
   
-  constructor(ollamaEndpoint = 'http://localhost:11434') {
+  constructor(ollamaEndpoint = OLLAMA_CONFIG.baseUrl) {
     this.ollamaEndpoint = ollamaEndpoint
   }
 
@@ -123,31 +120,23 @@ export class CharacterExtractor {
       throw new Error('Ollama server not available')
     }
 
-    // Prepare text sample (use first ~5000 characters for analysis)
-    const textSample = text.substring(0, 5000)
-    
-    const prompt = `Analyze this text and extract the main characters. Return ONLY a JSON array of objects with this exact format:
-[{"name": "Character Name", "aliases": ["Alias1", "Alias2"], "description": "Brief role"}]
-
-Extract up to ${maxCharacters} most important characters. Include main characters, important secondary characters, and any character mentioned multiple times. For aliases, include nicknames, titles, alternate names, or different forms of the same character's name.
-
-Text to analyze:
-${textSample}`
-
     try {
+      const prompt = this.buildCharacterExtractionPrompt(text, maxCharacters)
       const response = await fetch(`${this.ollamaEndpoint}/api/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          model: 'llama3.2', // Fallback models: llama2, codellama
+          model: OLLAMA_CONFIG.defaultModel,
           prompt,
           stream: false,
           options: {
-            temperature: 0.3,
+            temperature: 0.1,
             top_p: 0.9,
             max_tokens: 1000
           }
-        })
+        }),
       })
 
       if (!response.ok) {
@@ -155,95 +144,182 @@ ${textSample}`
       }
 
       const data = await response.json()
-      const responseText = data.response || ''
+      const llmResponse = data.response || ''
 
-      // Parse JSON from response
-      const jsonMatch = responseText.match(/\[[\s\S]*\]/)
-      if (!jsonMatch) {
-        throw new Error('No valid JSON found in LLM response')
-      }
+      // Parse the LLM response
+      const characters = this.parseLLMResponse(llmResponse, maxCharacters)
+      return characters
 
-      const llmCharacters = JSON.parse(jsonMatch[0])
-      
-      return llmCharacters.map((char: any, index: number) => ({
-        id: this.generateCharacterId(char.name),
-        name: char.name,
-        aliases: char.aliases || [],
-        countGuess: 0, // Will be calculated later
-        extractionMethod: 'llm' as const,
-        confidence: 0.9 - (index * 0.05) // Decrease confidence with rank
-      }))
     } catch (error) {
-      console.error('LLM extraction error:', error)
+      console.error('Ollama LLM extraction failed:', error)
       throw error
     }
   }
 
   /**
-   * Extract characters using compromise NLP
+   * Check Ollama server health
    */
-  private async extractWithCompromise(text: string, maxCharacters: number): Promise<ExtractedCharacter[]> {
-    // Dynamic import to keep bundle size down
-    const nlp = await import('compromise')
-    const doc = nlp.default(text)
-
-    // Extract proper nouns that could be people
-    const people = doc.people().json()
-    const places = doc.places().json()
-    const properNouns = doc.match('#ProperNoun').json()
-
-    // Combine and deduplicate
-    const candidates = new Map<string, ExtractedCharacter>()
-
-    // Process people (highest confidence)
-    people.forEach((person: any) => {
-      const name = person.text
-      const id = this.generateCharacterId(name)
-      if (!candidates.has(id)) {
-        candidates.set(id, {
-          id,
-          name,
-          aliases: [],
-          countGuess: 0,
-          extractionMethod: 'compromise',
-          confidence: 0.8
-        })
-      }
-    })
-
-    // Process proper nouns (medium confidence, filter out places)
-    properNouns.forEach((noun: any) => {
-      const name = noun.text
-      const id = this.generateCharacterId(name)
-      
-      // Skip if it's a known place or too short/long
-      if (name.length < 2 || name.length > 30) return
-      if (places.some((place: any) => place.text === name)) return
-      
-      // Skip common non-character words
-      const nonCharacterWords = ['Chapter', 'Book', 'Part', 'Volume', 'Mr', 'Mrs', 'Miss', 'Dr', 'Sir', 'Lady']
-      if (nonCharacterWords.some(word => name.includes(word))) return
-
-      if (!candidates.has(id)) {
-        candidates.set(id, {
-          id,
-          name,
-          aliases: [],
-          countGuess: 0,
-          extractionMethod: 'compromise',
-          confidence: 0.6
-        })
-      }
-    })
-
-    // Return top candidates by confidence
-    return Array.from(candidates.values())
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, maxCharacters)
+  private async checkOllamaHealth(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.ollamaEndpoint}/api/tags`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      return response.ok
+    } catch (error) {
+      console.warn('Ollama health check failed:', error)
+      return false
+    }
   }
 
   /**
-   * Merge two character lists, handling duplicates and aliases
+   * Build prompt for character extraction
+   */
+  private buildCharacterExtractionPrompt(text: string, maxCharacters: number): string {
+    const maxTextLength = 4000
+    const textSample = text.length > maxTextLength 
+      ? text.substring(0, maxTextLength) + '...'
+      : text
+
+    return `Analyze this text and identify the main characters. Return ONLY a JSON array with the top ${maxCharacters} characters.
+
+Format: [{"name": "Character Name", "aliases": ["Alias1", "Alias2"], "confidence": 0.95}]
+
+Rules:
+- Include main characters only (not minor mentions)
+- List common aliases/variations of names
+- Confidence score 0-1 based on importance
+- Return valid JSON only, no explanation
+
+Text to analyze:
+${textSample}`
+  }
+
+  /**
+   * Parse LLM response for character data
+   */
+  private parseLLMResponse(response: string, maxCharacters: number): ExtractedCharacter[] {
+    try {
+      // Extract JSON from response (LLM might include extra text)
+      const jsonMatch = response.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) {
+        throw new Error('No JSON array found in response')
+      }
+
+      const characters = JSON.parse(jsonMatch[0])
+      
+      // Validate and clean the response
+      return characters
+        .filter((char: any) => char.name && typeof char.name === 'string')
+        .map((char: any) => ({
+          id: this.generateId(char.name),
+          name: char.name.trim(),
+          aliases: Array.isArray(char.aliases) ? char.aliases.map((a: any) => String(a).trim()) : [],
+          countGuess: 0, // Will be updated later
+          extractionMethod: 'llm' as const,
+          confidence: typeof char.confidence === 'number' ? Math.max(0, Math.min(1, char.confidence)) : 0.8
+        }))
+        .slice(0, maxCharacters)
+
+    } catch (error) {
+      console.warn('Failed to parse LLM character response:', error)
+      throw new Error('Invalid character extraction response')
+    }
+  }
+
+  /**
+   * Extract characters using compromise.js NLP
+   */
+  private async extractWithCompromise(text: string, maxCharacters: number): Promise<ExtractedCharacter[]> {
+    try {
+      // Dynamic import to avoid SSR issues
+      const compromise = await import('compromise')
+      const doc = compromise.default(text)
+      
+      // Extract people names
+      const people = doc.people().out('array')
+      
+      // Count occurrences and create character objects
+      const characterMap = new Map<string, { count: number; aliases: Set<string> }>()
+      
+      people.forEach((person: string) => {
+        const cleanName = person.trim()
+        if (cleanName.length > 2 && cleanName.length < 50) {
+          const existing = characterMap.get(cleanName) || { count: 0, aliases: new Set() }
+          existing.count++
+          characterMap.set(cleanName, existing)
+        }
+      })
+
+      // Convert to ExtractedCharacter format
+      const characters: ExtractedCharacter[] = Array.from(characterMap.entries())
+        .map(([name, data]) => ({
+          id: this.generateId(name),
+          name,
+          aliases: Array.from(data.aliases),
+          countGuess: data.count,
+          extractionMethod: 'compromise' as const,
+          confidence: Math.min(0.9, Math.max(0.3, data.count / 100))
+        }))
+        .sort((a, b) => b.countGuess - a.countGuess)
+        .slice(0, maxCharacters)
+
+      return characters
+
+    } catch (error) {
+      console.warn('Compromise extraction failed:', error)
+      // Fallback to simple regex-based extraction
+      return this.extractWithRegex(text, maxCharacters)
+    }
+  }
+
+  /**
+   * Fallback regex-based character extraction
+   */
+  private extractWithRegex(text: string, maxCharacters: number): ExtractedCharacter[] {
+    const characters = new Map<string, { mentions: number; aliases: Set<string> }>()
+    
+    // Common name patterns
+    const namePatterns = [
+      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, // Capitalized names
+      /\b(?:Mr|Mrs|Miss|Dr|Professor|Captain|Sir|Lady)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, // Titles + names
+    ]
+
+    // Extract potential character names
+    for (const pattern of namePatterns) {
+      let match
+      while ((match = pattern.exec(text)) !== null) {
+        const name = match[1] || match[0]
+        const cleanName = name.replace(/^(Mr|Mrs|Miss|Dr|Professor|Captain|Sir|Lady)\.?\s+/, '').trim()
+        
+        if (cleanName.length > 2 && cleanName.length < 50) {
+          const existing = characters.get(cleanName) || { mentions: 0, aliases: new Set() }
+          existing.mentions++
+          characters.set(cleanName, existing)
+        }
+      }
+    }
+
+    // Convert to required format and sort by mentions
+    const result = Array.from(characters.entries())
+      .map(([name, data]) => ({
+        id: this.generateId(name),
+        name,
+        aliases: Array.from(data.aliases),
+        countGuess: data.mentions,
+        extractionMethod: 'compromise' as const,
+        confidence: Math.min(0.9, Math.max(0.3, data.mentions / 100)) // Heuristic confidence
+      }))
+      .sort((a, b) => b.countGuess - a.countGuess)
+      .slice(0, maxCharacters)
+
+    return result
+  }
+
+  /**
+   * Merge character lists from different extraction methods
    */
   private mergeCharacterLists(
     primary: ExtractedCharacter[], 
@@ -251,151 +327,100 @@ ${textSample}`
     threshold: number
   ): ExtractedCharacter[] {
     const merged = [...primary]
-    
-    secondary.forEach(secondChar => {
-      const existing = merged.find(char => 
-        this.calculateSimilarity(char.name, secondChar.name) > threshold
-      )
-      
-      if (existing) {
-        // Merge aliases
-        secondChar.aliases.forEach(alias => {
-          if (!existing.aliases.includes(alias) && alias !== existing.name) {
-            existing.aliases.push(alias)
-          }
-        })
-        // Keep higher confidence
-        existing.confidence = Math.max(existing.confidence, secondChar.confidence)
-      } else {
-        merged.push(secondChar)
+    const primaryNames = new Set(primary.map(c => c.name.toLowerCase()))
+
+    for (const char of secondary) {
+      if (!primaryNames.has(char.name.toLowerCase())) {
+        merged.push(char)
       }
-    })
-    
+    }
+
     return merged
   }
 
   /**
-   * Merge similar character names as aliases
+   * Merge aliases for similar character names
    */
   private mergeAliases(characters: ExtractedCharacter[], threshold: number): ExtractedCharacter[] {
     const merged: ExtractedCharacter[] = []
     const processed = new Set<string>()
 
-    characters.forEach(char => {
-      if (processed.has(char.id)) return
+    for (const char of characters) {
+      if (processed.has(char.name.toLowerCase())) continue
 
-      const similar = characters.filter(other => 
-        other.id !== char.id && 
-        !processed.has(other.id) &&
-        this.calculateSimilarity(char.name, other.name) > threshold
+      const similar = characters.filter(c => 
+        c !== char && 
+        !processed.has(c.name.toLowerCase()) &&
+        this.calculateSimilarity(char.name, c.name) >= threshold
       )
 
-      // Merge similar characters
-      similar.forEach(sim => {
-        if (!char.aliases.includes(sim.name)) {
-          char.aliases.push(sim.name)
+      if (similar.length > 0) {
+        // Merge similar characters
+        const allAliases = [char.name, ...char.aliases, ...similar.flatMap(s => [s.name, ...s.aliases])]
+        const mergedChar: ExtractedCharacter = {
+          ...char,
+          aliases: allAliases.filter((name, index, arr) => arr.indexOf(name) === index)
         }
-        char.aliases.push(...sim.aliases)
-        processed.add(sim.id)
-      })
+        merged.push(mergedChar)
+        
+        // Mark similar characters as processed
+        similar.forEach(s => processed.add(s.name.toLowerCase()))
+      } else {
+        merged.push(char)
+      }
 
-      // Deduplicate aliases
-      char.aliases = [...new Set(char.aliases)].filter(alias => alias !== char.name)
-      
-      merged.push(char)
-      processed.add(char.id)
-    })
+      processed.add(char.name.toLowerCase())
+    }
 
     return merged
   }
 
   /**
-   * Count actual mentions in text for each character
+   * Calculate similarity between two names
+   */
+  private calculateSimilarity(name1: string, name2: string): number {
+    const words1 = name1.toLowerCase().split(/\s+/)
+    const words2 = name2.toLowerCase().split(/\s+/)
+    
+    let matches = 0
+    for (const word1 of words1) {
+      for (const word2 of words2) {
+        if (word1 === word2 || word1.includes(word2) || word2.includes(word1)) {
+          matches++
+        }
+      }
+    }
+    
+    return matches / Math.max(words1.length, words2.length)
+  }
+
+  /**
+   * Count actual mentions in text
    */
   private countMentions(characters: ExtractedCharacter[], text: string): ExtractedCharacter[] {
-    const lowerText = text.toLowerCase()
-    
     return characters.map(char => {
-      let count = 0
-      const patterns = [char.name, ...char.aliases]
+      const nameRegex = new RegExp(`\\b${char.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi')
+      const matches = text.match(nameRegex) || []
       
-      patterns.forEach(pattern => {
-        const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi')
-        const matches = lowerText.match(regex)
-        count += matches ? matches.length : 0
-      })
-      
+      // Count alias mentions too
+      let totalMentions = matches.length
+      for (const alias of char.aliases) {
+        const aliasRegex = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi')
+        const aliasMatches = text.match(aliasRegex) || []
+        totalMentions += aliasMatches.length
+      }
+
       return {
         ...char,
-        countGuess: count
+        countGuess: totalMentions
       }
     })
   }
 
   /**
-   * Check if Ollama server is available
+   * Generate unique ID for character
    */
-  private async checkOllamaHealth(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.ollamaEndpoint}/api/tags`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000) // 3 second timeout
-      })
-      return response.ok
-    } catch {
-      return false
-    }
-  }
-
-  /**
-   * Calculate string similarity (Levenshtein distance based)
-   */
-  private calculateSimilarity(str1: string, str2: string): number {
-    const a = str1.toLowerCase()
-    const b = str2.toLowerCase()
-    
-    if (a === b) return 1
-    if (a.includes(b) || b.includes(a)) return 0.8
-    
-    const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null))
-    
-    for (let i = 0; i <= a.length; i++) matrix[0][i] = i
-    for (let j = 0; j <= b.length; j++) matrix[j][0] = j
-    
-    for (let j = 1; j <= b.length; j++) {
-      for (let i = 1; i <= a.length; i++) {
-        const indicator = a[i - 1] === b[j - 1] ? 0 : 1
-        matrix[j][i] = Math.min(
-          matrix[j][i - 1] + 1,
-          matrix[j - 1][i] + 1,
-          matrix[j - 1][i - 1] + indicator
-        )
-      }
-    }
-    
-    const distance = matrix[b.length][a.length]
-    return 1 - distance / Math.max(a.length, b.length)
-  }
-
-  /**
-   * Generate consistent character ID
-   */
-  private generateCharacterId(name: string): string {
-    return name.toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-  }
-
-  /**
-   * Convert extracted characters to API format
-   */
-  static toApiFormat(characters: ExtractedCharacter[]): Character[] {
-    return characters.map(char => ({
-      name: char.name,
-      aliases: char.aliases,
-      importance: Math.round(char.confidence * 100),
-      mentions: char.countGuess
-    }))
+  private generateId(name: string): string {
+    return `char_${name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}_${Date.now()}`
   }
 }

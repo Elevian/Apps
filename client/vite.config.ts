@@ -94,8 +94,8 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: process.env.NODE_ENV === 'production' 
-          ? 'https://gutenberg-characters.onrender.com'
-          : 'http://localhost:10000',
+          ? process.env.VITE_API_URL || 'https://gutenberg-characters.onrender.com'
+          : process.env.VITE_API_URL || 'http://localhost:10000',
         changeOrigin: true,
         secure: false,
       },

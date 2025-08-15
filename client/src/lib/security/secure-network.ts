@@ -5,6 +5,7 @@
 
 import { privacyManager, type NetworkRequest } from './privacy-manager'
 import { toast } from 'sonner'
+import { OLLAMA_CONFIG } from '../config/api'
 
 export interface SecureRequestOptions extends RequestInit {
   requestInfo?: Omit<NetworkRequest, 'url'>
@@ -141,7 +142,7 @@ export const ollamaAPI = {
   /**
    * Check if Ollama is available
    */
-  async isAvailable(baseUrl: string = 'http://localhost:11434'): Promise<boolean> {
+  async isAvailable(baseUrl: string = OLLAMA_CONFIG.baseUrl): Promise<boolean> {
     try {
       await secureFetch(`${baseUrl}/api/tags`, {
         requestInfo: {
@@ -162,7 +163,7 @@ export const ollamaAPI = {
   /**
    * List available models
    */
-  async listModels(baseUrl: string = 'http://localhost:11434'): Promise<string[]> {
+  async listModels(baseUrl: string = OLLAMA_CONFIG.baseUrl): Promise<string[]> {
     const response = await secureFetch(`${baseUrl}/api/tags`, {
       requestInfo: {
         type: 'ollama',
@@ -183,8 +184,8 @@ export const ollamaAPI = {
    */
   async generate(
     prompt: string, 
-    model: string = 'llama2',
-    baseUrl: string = 'http://localhost:11434'
+    model: string = OLLAMA_CONFIG.defaultModel,
+    baseUrl: string = OLLAMA_CONFIG.baseUrl
   ): Promise<string> {
     const response = await secureFetch(`${baseUrl}/api/generate`, {
       method: 'POST',

@@ -3,8 +3,9 @@
  * Attempts LLM-based character extraction with graceful fallback to heuristic methods
  */
 
-import { ollamaAPI } from '@/lib/security/secure-network'
 import { toast } from 'sonner'
+import { ollamaAPI } from '../security/secure-network'
+import { OLLAMA_CONFIG } from '../config/api'
 
 export interface OllamaConfig {
   baseUrl: string
@@ -15,13 +16,22 @@ export interface OllamaConfig {
 
 export interface FallbackResult<T> {
   data: T
-  method: 'ollama' | 'heuristic'
+  method: 'ollama' | 'heuristic' | 'hybrid'
   success: boolean
-  error?: string
   processingTime: number
 }
 
-export class OllamaFallbackManager {
+export interface OllamaResponse {
+  response: string
+  model: string
+  done: boolean
+}
+
+/**
+ * OllamaFallback provides LLM-based operations with heuristic fallbacks
+ * when Ollama is unavailable or fails
+ */
+export class OllamaFallback {
   private config: OllamaConfig
   private isAvailable: boolean | null = null
   private lastCheck: number = 0
@@ -29,10 +39,10 @@ export class OllamaFallbackManager {
 
   constructor(config: Partial<OllamaConfig> = {}) {
     this.config = {
-      baseUrl: 'http://localhost:11434',
-      model: 'llama2',
-      timeout: 30000,
-      maxRetries: 2,
+      baseUrl: OLLAMA_CONFIG.baseUrl,
+      model: OLLAMA_CONFIG.defaultModel,
+      timeout: OLLAMA_CONFIG.timeout,
+      maxRetries: OLLAMA_CONFIG.maxRetries,
       ...config
     }
   }
@@ -123,187 +133,84 @@ export class OllamaFallbackManager {
       }
     }
 
-    // All Ollama attempts failed - fallback with non-intrusive notification
-    console.warn(`Ollama failed after ${this.config.maxRetries} attempts:`, lastError)
+    // All attempts failed - fallback to heuristic
+    console.warn(`Ollama failed after ${this.config.maxRetries} attempts, using heuristic fallback`)
     
-    // Show subtle toast about fallback
-    toast.info(`Using alternative ${operationName.toLowerCase()} method`, {
-      duration: 3000,
-      position: 'bottom-right',
-      description: 'Local LLM unavailable, using built-in analysis'
-    })
-
     try {
       const fallbackData = await heuristicFallback()
       return {
         data: fallbackData,
         method: 'heuristic',
         success: true,
-        error: lastError?.message,
         processingTime: Date.now() - startTime
       }
     } catch (fallbackError) {
-      throw new Error(`Both Ollama and fallback methods failed: ${fallbackError}`)
+      console.error('Both Ollama and heuristic fallback failed:', fallbackError)
+      throw new Error(`Operation failed: ${lastError?.message || 'Unknown error'}`)
     }
   }
 
   /**
-   * Character extraction with Ollama + fallback
+   * Generate text completion with fallback
    */
-  async extractCharacters(
-    text: string,
-    maxCharacters: number = 20
-  ): Promise<FallbackResult<Array<{ name: string; aliases: string[]; confidence: number }>>> {
-    const ollamaOperation = async () => {
-      const prompt = this.buildCharacterExtractionPrompt(text, maxCharacters)
-      const response = await ollamaAPI.generate(prompt, this.config.model, this.config.baseUrl)
-      return this.parseCharacterResponse(response)
-    }
-
-    const heuristicFallback = () => {
-      // Import compromise.js for NLP-based extraction
-      return this.extractCharactersHeuristic(text, maxCharacters)
-    }
-
+  async generateText(
+    prompt: string,
+    fallbackText: string = 'Text generation unavailable'
+  ): Promise<FallbackResult<string>> {
     return this.withFallback(
-      ollamaOperation,
-      heuristicFallback,
-      'Character extraction'
+      async () => {
+        const response = await ollamaAPI.generate(prompt, this.config.model, this.config.baseUrl)
+        return response || fallbackText
+      },
+      () => fallbackText,
+      'Text generation'
     )
   }
 
   /**
-   * Build character extraction prompt for LLM
+   * Extract structured data with fallback
    */
-  private buildCharacterExtractionPrompt(text: string, maxCharacters: number): string {
-    // Limit text size for LLM processing
-    const maxTextLength = 4000
-    const textSample = text.length > maxTextLength 
-      ? text.substring(0, maxTextLength) + '...'
-      : text
-
-    return `Analyze this text and identify the main characters. Return ONLY a JSON array with the top ${maxCharacters} characters.
-
-Format: [{"name": "Character Name", "aliases": ["Alias1", "Alias2"], "confidence": 0.95}]
-
-Rules:
-- Include main characters only (not minor mentions)
-- List common aliases/variations of names
-- Confidence score 0-1 based on importance
-- Return valid JSON only, no explanation
-
-Text to analyze:
-${textSample}`
-  }
-
-  /**
-   * Parse LLM response for character data
-   */
-  private parseCharacterResponse(response: string): Array<{ name: string; aliases: string[]; confidence: number }> {
-    try {
-      // Extract JSON from response (LLM might include extra text)
-      const jsonMatch = response.match(/\[[\s\S]*\]/)
-      if (!jsonMatch) {
-        throw new Error('No JSON array found in response')
-      }
-
-      const characters = JSON.parse(jsonMatch[0])
-      
-      // Validate and clean the response
-      return characters
-        .filter((char: any) => char.name && typeof char.name === 'string')
-        .map((char: any) => ({
-          name: char.name.trim(),
-          aliases: Array.isArray(char.aliases) ? char.aliases.map((a: any) => String(a).trim()) : [],
-          confidence: typeof char.confidence === 'number' ? Math.max(0, Math.min(1, char.confidence)) : 0.8
-        }))
-        .slice(0, 20) // Ensure max limit
-
-    } catch (error) {
-      console.warn('Failed to parse LLM character response:', error)
-      throw new Error('Invalid character extraction response')
-    }
-  }
-
-  /**
-   * Heuristic character extraction using NLP patterns
-   */
-  private async extractCharactersHeuristic(
-    text: string, 
-    maxCharacters: number
-  ): Promise<Array<{ name: string; aliases: string[]; confidence: number }>> {
-    // Simple heuristic approach (can be enhanced with compromise.js)
-    const characters = new Map<string, { mentions: number; aliases: Set<string> }>()
-    
-    // Common name patterns
-    const namePatterns = [
-      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, // Capitalized names
-      /\b(?:Mr|Mrs|Miss|Dr|Professor|Captain|Sir|Lady)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g, // Titles + names
-    ]
-
-    // Extract potential character names
-    for (const pattern of namePatterns) {
-      let match
-      while ((match = pattern.exec(text)) !== null) {
-        const name = match[1] || match[0]
-        const cleanName = name.replace(/^(Mr|Mrs|Miss|Dr|Professor|Captain|Sir|Lady)\.?\s+/, '').trim()
+  async extractStructuredData<T>(
+    prompt: string,
+    fallbackData: T,
+    operationName: string = 'Data extraction'
+  ): Promise<FallbackResult<T>> {
+    return this.withFallback(
+      async () => {
+        const response = await ollamaAPI.generate(prompt, this.config.model, this.config.baseUrl)
         
-        if (cleanName.length > 2 && cleanName.length < 50) {
-          const existing = characters.get(cleanName) || { mentions: 0, aliases: new Set() }
-          existing.mentions++
-          characters.set(cleanName, existing)
+        try {
+          // Attempt to parse JSON response
+          const parsed = JSON.parse(response)
+          return parsed as T
+        } catch {
+          // If parsing fails, return fallback
+          console.warn('Failed to parse Ollama response as JSON, using fallback')
+          return fallbackData
         }
-      }
-    }
+      },
+      () => fallbackData,
+      operationName
+    )
+  }
 
-    // Convert to required format and sort by mentions
-    const result = Array.from(characters.entries())
-      .map(([name, data]) => ({
-        name,
-        aliases: Array.from(data.aliases),
-        confidence: Math.min(0.9, Math.max(0.3, data.mentions / 100)) // Heuristic confidence
-      }))
-      .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, maxCharacters)
-
-    return result
+  /**
+   * Get current configuration
+   */
+  getConfig(): OllamaConfig {
+    return { ...this.config }
   }
 
   /**
    * Update configuration
    */
-  updateConfig(config: Partial<OllamaConfig>): void {
-    this.config = { ...this.config, ...config }
-    // Reset availability check to retest with new config
+  updateConfig(newConfig: Partial<OllamaConfig>): void {
+    this.config = { ...this.config, ...newConfig }
+    // Reset availability cache when config changes
     this.isAvailable = null
     this.lastCheck = 0
-  }
-
-  /**
-   * Get current status
-   */
-  getStatus(): {
-    isAvailable: boolean | null
-    lastCheck: number
-    config: OllamaConfig
-  } {
-    return {
-      isAvailable: this.isAvailable,
-      lastCheck: this.lastCheck,
-      config: { ...this.config }
-    }
   }
 }
 
 // Global instance
-export const ollamaFallback = new OllamaFallbackManager()
-
-/**
- * Convenience function for character extraction with fallback
- */
-export async function extractCharactersWithFallback(
-  text: string,
-  maxCharacters: number = 20
-): Promise<FallbackResult<Array<{ name: string; aliases: string[]; confidence: number }>>> {
-  return ollamaFallback.extractCharacters(text, maxCharacters)
-}
+export const ollamaFallback = new OllamaFallback()
