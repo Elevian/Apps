@@ -86,20 +86,63 @@ app.use('/api/*', (req, res) => {
 })
 
 // Serve static files from client build
-if (process.env.NODE_ENV === 'production') {
-  const clientDistPath = path.join(__dirname, '../../client/dist')
+// Try multiple possible locations for the client build
+const possibleClientPaths = [
+  path.join(__dirname, '../../client/dist'),           // Relative to server/dist
+  path.join(__dirname, '../client/dist'),             // Relative to server/dist (alternative)
+  path.join(__dirname, '../client-dist'),             // Copied client files in server directory
+  path.join(process.cwd(), 'client/dist'),            // From project root
+  path.join(process.cwd(), '../client/dist'),         // From project root (alternative)
+  './client-dist',                                     // Current working directory (copied files)
+  './client/dist'                                      // Current working directory
+]
+
+let clientDistPath: string | null = null
+
+// Find the first valid client build path
+for (const clientPath of possibleClientPaths) {
+  const indexPath = path.join(clientPath, 'index.html')
+  if (fs.existsSync(indexPath)) {
+    clientDistPath = clientPath
+    console.log(`✅ Found client build at: ${clientPath}`)
+    break
+  }
+}
+
+if (clientDistPath) {
+  console.log(`📁 Serving static files from: ${clientDistPath}`)
   app.use(express.static(clientDistPath))
   
   // Handle client routing - serve index.html for all non-API routes
   app.get('*', (req, res) => {
-          if (!req.path.startsWith('/api/')) {
-        const indexPath = path.join(clientDistPath, 'index.html')
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath)
-        } else {
-          res.status(404).json({ error: 'Client build not found' })
-        }
+    if (!req.path.startsWith('/api/')) {
+      const indexPath = path.join(clientDistPath!, 'index.html')
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath)
+      } else {
+        console.error(`❌ index.html not found at: ${indexPath}`)
+        res.status(404).json({ 
+          error: 'Client build index.html not found',
+          searchedPath: indexPath,
+          clientPath: clientDistPath
+        })
       }
+    }
+  })
+} else {
+  console.error('❌ Client build not found in any of these locations:')
+  possibleClientPaths.forEach(path => console.error(`   - ${path}`))
+  
+  // Serve a helpful error page instead of crashing
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.status(404).json({ 
+        error: 'Client build not found',
+        searchedPaths: possibleClientPaths,
+        currentDir: __dirname,
+        workingDir: process.cwd()
+      })
+    }
   })
 }
 

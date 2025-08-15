@@ -15,9 +15,18 @@ services:
       npm install
       
       # Build client
+      echo "🔨 Building client..."
       cd client && npm run build && cd ..
       
-      # Build server with verification
+      # Verify client build
+      if [ ! -d "client/dist" ]; then
+        echo "❌ Client build failed - dist directory not found"
+        exit 1
+      fi
+      echo "✅ Client build successful"
+      
+      # Build server
+      echo "🔨 Building server..."
       cd server
       npm install
       npx tsc
@@ -25,24 +34,25 @@ services:
       # Verify server build
       if [ ! -f "dist/index.js" ]; then
         echo "❌ Server build failed - dist/index.js not found"
-        echo "📁 Server directory contents:"
-        ls -la
-        echo "📁 Server dist contents (if exists):"
-        ls -la dist/ 2>/dev/null || echo "dist/ directory not found"
         exit 1
       fi
-      
       echo "✅ Server build successful - dist/index.js exists"
-      echo "📁 Server dist contents:"
-      ls -la dist/
-      cd ..
       
-      # Verify client build
-      if [ ! -d "client/dist" ]; then
-        echo "❌ Client build failed - dist directory not found"
+      # Copy client build to server directory for easier access
+      echo "📁 Copying client build to server directory..."
+      cp -r ../client/dist ./client-dist
+      
+      # Verify client files are accessible from server
+      if [ -f "client-dist/index.html" ]; then
+        echo "✅ Client files copied successfully to server/client-dist"
+        echo "📁 Client files available at: $(pwd)/client-dist"
+        ls -la client-dist/
+      else
+        echo "❌ Failed to copy client files"
         exit 1
       fi
       
+      cd ..
       echo "✅ All builds successful"
     
     startCommand: |
