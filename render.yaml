@@ -11,16 +11,30 @@ services:
       export NODE_OPTIONS="--max-old-space-size=4096"
       export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
       
+      echo "🚀 Starting build process..."
+      
       # Install dependencies
+      echo "📦 Installing dependencies..."
       npm install
       
-      # Build client
-      echo "🔨 Building client..."
-      cd client && npm run build && cd ..
+      # Build client with Vite (skip TypeScript compilation)
+      echo "🔨 Building client with Vite..."
+      cd client
+      npm install
+      npx vite build --mode production
+      if [ $? -ne 0 ]; then
+        echo "❌ Client build failed"
+        exit 1
+      fi
+      cd ..
       
       # Verify client build
       if [ ! -d "client/dist" ]; then
         echo "❌ Client build failed - dist directory not found"
+        exit 1
+      fi
+      if [ ! -f "client/dist/index.html" ]; then
+        echo "❌ Client build failed - index.html not found"
         exit 1
       fi
       echo "✅ Client build successful"
@@ -32,6 +46,10 @@ services:
       cd server
       npm install
       npx tsc
+      if [ $? -ne 0 ]; then
+        echo "❌ Server build failed"
+        exit 1
+      fi
       
       # Verify server build
       if [ ! -f "dist/index.js" ]; then
@@ -50,8 +68,14 @@ services:
         echo "✅ Client files copied successfully to server/dist/client"
         echo "📁 Server dist/client contents:"
         ls -la dist/client/
+        echo "📁 Total files in server/dist:"
+        find dist -type f | wc -l
       else
         echo "❌ Failed to copy client files"
+        echo "📁 Current server/dist contents:"
+        ls -la dist/
+        echo "📁 Current server/dist/client contents (if exists):"
+        ls -la dist/client/ 2>/dev/null || echo "dist/client directory not found"
         exit 1
       fi
       
