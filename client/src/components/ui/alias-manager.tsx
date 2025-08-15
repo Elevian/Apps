@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -214,7 +214,7 @@ export function AliasManager({
   /**
    * Import characters from JSON
    */
-  const importCharacters = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importCharacters = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -385,7 +385,6 @@ export function AliasManager({
                               value={alias}
                               onChange={(e) => updateAlias(character.id, index, e.target.value)}
                               placeholder="Alias name..."
-                              size="sm"
                             />
                             <Button
                               variant="ghost"

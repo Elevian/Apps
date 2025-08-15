@@ -239,6 +239,7 @@ router.get('/text/:id', async (req: Request, res: Response) => {
     console.log(`📤 [/text/:id] Sending success response for book ${id}`)
     res.json(response)
   } catch (error) {
+    const { id } = req.params
     console.log(`💥 [/text/:id] Caught exception for book ${id}:`, error)
     
     // Check if it's a network-related error

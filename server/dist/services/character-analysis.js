@@ -158,9 +158,22 @@ ${text.substring(0, 8000)}`;
             // Skip single letters or very short names
             if (name.length < 2)
                 continue;
-            // Skip common words that might be misidentified
-            const commonWords = ['he', 'she', 'it', 'they', 'we', 'i', 'you', 'the', 'and', 'or', 'but'];
+            // Skip pronouns and common words that might be misidentified
+            const commonWords = [
+                'he', 'she', 'it', 'they', 'we', 'i', 'you', 'the', 'and', 'or', 'but',
+                'his', 'her', 'hers', 'him', 'them', 'their', 'theirs', 'my', 'mine',
+                'your', 'yours', 'our', 'ours', 'this', 'that', 'these', 'those',
+                'who', 'whom', 'whose', 'which', 'what', 'where', 'when', 'why', 'how',
+                'one', 'some', 'any', 'all', 'each', 'every', 'few', 'many', 'most',
+                'other', 'another', 'such', 'same', 'own', 'very', 'only', 'just'
+            ];
             if (commonWords.includes(name.toLowerCase()))
+                continue;
+            // Skip if the name is all lowercase (likely not a proper noun)
+            if (name === name.toLowerCase())
+                continue;
+            // Skip if it contains numbers or special characters
+            if (/[0-9@#$%^&*()_+=\[\]{}|;':".,/<>?`~]/.test(name))
                 continue;
             // Count mentions in text
             const mentions = this.countMentions(text, name);
@@ -176,26 +189,55 @@ ${text.substring(0, 8000)}`;
                 });
             }
         }
-        // Also look for quoted speech to find additional characters
-        const quotedSpeech = text.match(/"[^"]*"/g) || [];
-        for (const quote of quotedSpeech) {
-            // Look for attribution patterns like 'said John', 'Mary replied'
-            const attribution = text.match(new RegExp(`${quote.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^.!?]*?(?:said|replied|asked|whispered|shouted|exclaimed)\\s+([A-Z][a-z]+)`, 'i'));
-            if (attribution && attribution[1]) {
-                const name = attribution[1].trim();
-                if (name.length > 1 && !placeNames.has(name)) {
-                    const mentions = this.countMentions(text, name);
-                    if (mentions > 1) {
-                        const existing = characterMap.get(name);
-                        if (!existing) {
-                            characterMap.set(name, {
-                                name,
-                                aliases: [],
-                                importance: this.calculateImportance(mentions, text.length, name),
-                                mentions,
-                                description: `Character with dialogue`
-                            });
-                        }
+        // Look for title + name patterns (Mr., Mrs., Miss, Dr., etc.) - more precise
+        const titlePattern = /\b(?:Mr|Mrs|Miss|Ms|Dr|Professor|Sir|Lady|Lord|Captain|Colonel|Lieutenant|Major|General)\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
+        let titleMatch;
+        while ((titleMatch = titlePattern.exec(text)) !== null) {
+            const fullName = titleMatch[0].trim();
+            const lastName = titleMatch[1].trim();
+            // Skip if the "name" part is too long (likely not a real name)
+            if (lastName.split(' ').length > 3)
+                continue;
+            const mentions = this.countMentions(text, fullName);
+            if (mentions >= 1) {
+                const existing = characterMap.get(fullName);
+                if (!existing) {
+                    characterMap.set(fullName, {
+                        name: fullName,
+                        aliases: [lastName],
+                        importance: this.calculateImportance(mentions, text.length, fullName) + 5, // Boost for titles
+                        mentions,
+                        description: `Titled character`
+                    });
+                }
+            }
+        }
+        // Look for simple dialogue attribution patterns - very conservative
+        const simpleDialoguePattern = /(?:"[^"]{5,50}")(?:\s*,?\s*(?:said|replied|asked)\s+)([A-Z][a-z]+)\b/g;
+        let dialogueMatch;
+        while ((dialogueMatch = simpleDialoguePattern.exec(text)) !== null) {
+            const name = dialogueMatch[1].trim();
+            // Only accept single word names for dialogue to avoid false positives
+            if (name.length > 2 && name.length < 15 && !placeNames.has(name)) {
+                const commonWords = ['He', 'She', 'It', 'They', 'We', 'You', 'The', 'And', 'Or', 'But', 'This', 'That', 'His', 'Her'];
+                if (commonWords.includes(name))
+                    continue;
+                const mentions = this.countMentions(text, name);
+                if (mentions >= 1) {
+                    const existing = characterMap.get(name);
+                    if (!existing) {
+                        characterMap.set(name, {
+                            name,
+                            aliases: [],
+                            importance: this.calculateImportance(mentions, text.length, name) + 15, // Higher boost for dialogue
+                            mentions,
+                            description: `Character with dialogue`
+                        });
+                    }
+                    else {
+                        // Boost importance if they have dialogue
+                        existing.importance += 15;
+                        existing.description = `Character with dialogue`;
                     }
                 }
             }

@@ -3,7 +3,33 @@ import { registerRoute } from 'workbox-routing'
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 
-declare const self: ServiceWorkerGlobalScope
+declare const self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: string[]
+  addEventListener: (type: string, listener: EventListener) => void
+  clients: any
+  skipWaiting(): Promise<void>
+}
+
+// Service Worker event types
+interface FetchEvent extends Event {
+  request: Request
+  respondWith(response: Response | Promise<Response>): void
+}
+
+interface SyncEvent extends Event {
+  tag: string
+  waitUntil(promise: Promise<void>): void
+}
+
+interface NotificationEvent extends Event {
+  notification: Notification
+  waitUntil(promise: Promise<void>): void
+}
+
+interface MessageEvent extends Event {
+  data: any
+  ports: MessagePort[]
+}
 
 // Precache all static assets
 precacheAndRoute(self.__WB_MANIFEST)
@@ -54,7 +80,7 @@ registerRoute(
 )
 
 // Handle offline fallback
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', (event: FetchEvent) => {
   // Only handle navigation requests
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -70,7 +96,7 @@ self.addEventListener('fetch', (event) => {
 })
 
 // Background sync for failed requests
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', (event: SyncEvent) => {
   if (event.tag === 'background-sync') {
     event.waitUntil(
       // Handle any background sync tasks
@@ -85,7 +111,7 @@ async function handleBackgroundSync() {
 }
 
 // Notification handling
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close()
   
   // Handle notification clicks
@@ -95,14 +121,14 @@ self.addEventListener('notificationclick', (event) => {
 })
 
 // Skip waiting and immediately activate
-self.addEventListener('message', (event) => {
+self.addEventListener('message', (event: MessageEvent) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
 })
 
 // Notify clients of updates
-self.addEventListener('message', (event) => {
+self.addEventListener('message', (event: MessageEvent) => {
   if (event.data && event.data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: '1.0.0' })
   }

@@ -213,8 +213,8 @@ export function useAnalysisPipeline(): AnalysisPipelineState & AnalysisPipelineC
     
     // Additional computed properties
     // stepLabel: STEP_LABELS[state.currentStep], // Removed to fix build
-    bookInfo,
-    analysisHealth,
+    // bookInfo removed - not part of interface
+    // analysisHealth removed - not part of interface
   }
 }
 

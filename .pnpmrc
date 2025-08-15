@@ -1,0 +1,29 @@
+# pnpm specific configuration
+registry=https://registry.npmjs.org/
+@typescript-eslint:registry=https://registry.npmjs.org/
+
+# Network retry settings
+network-timeout=300000
+fetch-retries=5
+fetch-retry-mintimeout=20000
+fetch-retry-maxtimeout=120000
+
+# Strict SSL
+strict-ssl=true
+
+# Use legacy peer deps
+legacy-peer-deps=true
+
+# Enable progress
+progress=true
+
+# Cache settings
+store-dir=.pnpm-store
+cache-dir=.pnpm-cache
+
+# Workspace settings
+shamefully-hoist=true
+prefer-workspace-packages=true
+
+# Node version compatibility
+use-node-version=22.16.0

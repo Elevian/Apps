@@ -98,75 +98,94 @@ export const gutenbergApi = {
     console.log(`📚 [MOCK] Resolving book ${id}...`)
     
     const mockBook = MOCK_BOOKS[id]
-    if (!mockBook) {
-      // Even for unknown IDs, return a generic response
+    if (mockBook) {
       return {
         id,
-        url: `https://www.gutenberg.org/files/${id}/${id}.txt`,
-        title: `Book ${id}`,
-        author: 'Unknown Author',
-        triedUrls: []
+        url: `https://www.gutenberg.org/ebooks/${id}`,
+        title: mockBook.title,
+        author: mockBook.author,
+        timestamp: new Date().toISOString()
       }
     }
 
+    // Fallback for unknown books
     return {
       id,
-      url: `https://www.gutenberg.org/files/${id}/${id}.txt`,
-      title: mockBook.title,
-      author: mockBook.author,
-      triedUrls: []
+      url: `https://www.gutenberg.org/ebooks/${id}`,
+      title: `Book ${id}`,
+      author: 'Unknown Author',
+      timestamp: new Date().toISOString()
     }
   },
 
   /**
-   * Fetch full book text (always succeeds with mock data)
+   * Get book text (always succeeds with mock data)
    */
-  async fetchText(id: string): Promise<BookText> {
-    console.log(`📖 [MOCK] Fetching text for book ${id}...`)
+  async getText(id: string): Promise<BookText> {
+    console.log(`📖 [MOCK] Getting text for book ${id}...`)
     
-    // Simulate a brief delay to show progress
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    const mockBook = MOCK_BOOKS[id] || {
-      title: `Book ${id}`,
-      author: 'Unknown Author',
-      text: `This is mock text for book ${id}. It contains several characters including Alice, Bob, Charlie, and Diana. They interact in various ways throughout the story. Alice speaks to Bob frequently, while Charlie and Diana have their own conversations. The story explores themes of friendship, adventure, and discovery. Alice says "Hello Bob, how are you today?" Bob replies "I'm doing well, Alice. Have you seen Charlie?" Charlie mentions "Diana and I were just discussing the weather." Diana adds "It's a beautiful day for an adventure!" The characters continue their interactions, creating a rich narrative full of dialogue and relationships.`
+    const mockBook = MOCK_BOOKS[id]
+    if (mockBook) {
+      const wordCount = mockBook.text.split(/\s+/).length
+      return {
+        id,
+        title: mockBook.title,
+        author: mockBook.author,
+        text: mockBook.text,
+        wordCount,
+        timestamp: new Date().toISOString(),
+        textLength: mockBook.text.length
+      }
     }
 
-    const wordCount = mockBook.text.split(/\s+/).length
-
+    // Fallback for unknown books
+    const fallbackText = `This is a mock book with ID ${id}. No actual text content available.`
     return {
       id,
-      title: mockBook.title,
-      author: mockBook.author,
-      text: mockBook.text,
-      wordCount,
+      title: `Book ${id}`,
+      author: 'Unknown Author',
+      text: fallbackText,
+      wordCount: fallbackText.split(/\s+/).length,
       timestamp: new Date().toISOString(),
-      textLength: mockBook.text.length,
-      triedUrls: [`https://www.gutenberg.org/files/${id}/${id}.txt`]
+      textLength: fallbackText.length
     }
   },
 
   /**
-   * Fetch book preview (always succeeds with mock data)
+   * Get book preview (always succeeds with mock data)
    */
-  async fetchPreview(id: string): Promise<BookPreview> {
-    console.log(`👀 [MOCK] Fetching preview for book ${id}...`)
+  async getPreview(id: string, maxLength: number = 500): Promise<BookPreview> {
+    console.log(`👀 [MOCK] Getting preview for book ${id}...`)
     
-    const mockBook = MOCK_BOOKS[id] || {
-      title: `Book ${id}`,
-      author: 'Unknown Author',
-      text: `This is a preview of book ${id}...`
+    const mockBook = MOCK_BOOKS[id]
+    if (mockBook) {
+      const preview = mockBook.text.substring(0, maxLength)
+      const hasMore = mockBook.text.length > maxLength
+      const wordCount = mockBook.text.split(/\s+/).length
+      
+      return {
+        id,
+        title: mockBook.title,
+        author: mockBook.author,
+        preview: preview + (hasMore ? '...' : ''),
+        hasMore,
+        wordCount,
+        fullTextLength: mockBook.text.length,
+        timestamp: new Date().toISOString()
+      }
     }
 
-    const preview = mockBook.text.substring(0, 1000) + (mockBook.text.length > 1000 ? '...' : '')
-
+    // Fallback for unknown books
+    const fallbackPreview = `This is a mock book with ID ${id}. No actual preview available.`
     return {
       id,
-      title: mockBook.title,
-      author: mockBook.author,
-      preview,
-      previewLength: preview.length
+      title: `Book ${id}`,
+      author: 'Unknown Author',
+      preview: fallbackPreview,
+      hasMore: false,
+      wordCount: fallbackPreview.split(/\s+/).length,
+      fullTextLength: fallbackPreview.length,
+      timestamp: new Date().toISOString()
     }
   }
 }
@@ -174,73 +193,52 @@ export const gutenbergApi = {
 // Mock Analysis API
 export const analysisApi = {
   /**
-   * Character analysis (always succeeds with mock results)
+   * Analyze characters in book text (always succeeds with mock data)
    */
   async analyzeCharacters(request: CharacterAnalysisRequest): Promise<CharacterAnalysisResult> {
-    console.log(`🧠 [MOCK] Analyzing characters for book ${request.bookId}...`)
+    console.log(`🔍 [MOCK] Analyzing characters in text (${request.text.length} chars)...`)
     
+    const bookId = request.text.includes('Frankenstein') ? '84' : 
+                   request.text.includes('Pride') ? '1342' : 
+                   request.text.includes('Moby') ? '2701' : '1'
+    
+    const mockBook = MOCK_BOOKS[bookId]
+    const bookTitle = mockBook?.title || 'Mock Book'
+    const bookAuthor = mockBook?.author || 'Mock Author'
+
     // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 100))
 
-    const mockBook = MOCK_BOOKS[request.bookId]
-    const bookTitle = mockBook?.title || `Book ${request.bookId}`
-
-    // Mock character analysis results
     const mockResults: CharacterAnalysisResult = {
-      bookId: request.bookId,
+      success: true,
       characters: [
         {
-          id: 'char_1',
-          name: mockBook ? getMainCharacter(request.bookId) : 'Alice',
-          aliases: mockBook ? getMainCharacterAliases(request.bookId) : ['A'],
-          mentions: 15,
-          centrality: 0.8,
-          sentiment: 0.2
+          name: mockBook ? getMainCharacter(request.text) : 'Alice',
+          aliases: mockBook ? getMainCharacterAliases(request.text) : ['A'],
+          importance: 95,
+          mentions: 25,
+          description: 'Main protagonist of the story'
         },
         {
-          id: 'char_2', 
-          name: mockBook ? getSecondCharacter(request.bookId) : 'Bob',
+          name: mockBook ? getSecondCharacter(request.text) : 'Bob',
           aliases: [],
+          importance: 80,
+          mentions: 18,
+          description: 'Secondary character with significant role'
+        },
+        {
+          name: mockBook ? getThirdCharacter(request.text) : 'Charlie',
+          aliases: [],
+          importance: 65,
           mentions: 12,
-          centrality: 0.6,
-          sentiment: 0.1
-        },
-        {
-          id: 'char_3',
-          name: mockBook ? getThirdCharacter(request.bookId) : 'Charlie',
-          aliases: [],
-          mentions: 8,
-          centrality: 0.4,
-          sentiment: -0.1
+          description: 'Supporting character'
         }
       ],
-      relationships: [
-        {
-          source: 'char_1',
-          target: 'char_2',
-          weight: 8,
-          sentiment: 0.3
-        },
-        {
-          source: 'char_1',
-          target: 'char_3',
-          weight: 5,
-          sentiment: 0.1
-        },
-        {
-          source: 'char_2',
-          target: 'char_3',
-          weight: 3,
-          sentiment: 0.0
-        }
-      ],
-      metadata: {
-        bookTitle,
-        totalWords: mockBook?.text.split(/\s+/).length || 1000,
-        analysisMode: request.mode || 'auto',
-        processingTime: 1000,
-        confidence: 0.85
-      }
+      method: 'ollama',
+      processing_time_ms: 1000,
+      text_length: request.text.length,
+      total_characters: 3,
+      timestamp: new Date().toISOString()
     }
 
     return mockResults
@@ -251,46 +249,38 @@ export const analysisApi = {
    */
   async health(): Promise<AnalysisHealth> {
     return {
-      status: 'ok',
-      models: ['mock-ai'],
-      uptime: Date.now()
+      compromise: true,
+      ollama: true,
+      timestamp: new Date().toISOString()
     }
   }
 }
 
 // Helper functions for mock character data
-function getMainCharacter(bookId: string): string {
-  const characters: Record<string, string> = {
-    '84': 'Victor Frankenstein',
-    '1342': 'Elizabeth Bennet', 
-    '2701': 'Ishmael'
-  }
-  return characters[bookId] || 'Alice'
+function getMainCharacter(text: string): string {
+  if (text.includes('Frankenstein')) return 'Victor Frankenstein'
+  if (text.includes('Pride')) return 'Elizabeth Bennet'
+  if (text.includes('Moby')) return 'Ishmael'
+  return 'Alice'
 }
 
-function getMainCharacterAliases(bookId: string): string[] {
-  const aliases: Record<string, string[]> = {
-    '84': ['Victor', 'Frankenstein'],
-    '1342': ['Elizabeth', 'Lizzy', 'Eliza'],
-    '2701': ['Narrator']
-  }
-  return aliases[bookId] || ['A']
+function getMainCharacterAliases(text: string): string[] {
+  if (text.includes('Frankenstein')) return ['Victor', 'Frankenstein']
+  if (text.includes('Pride')) return ['Elizabeth', 'Lizzy', 'Eliza']
+  if (text.includes('Moby')) return ['Narrator']
+  return ['A']
 }
 
-function getSecondCharacter(bookId: string): string {
-  const characters: Record<string, string> = {
-    '84': 'The Monster',
-    '1342': 'Mr. Darcy',
-    '2701': 'Captain Ahab'
-  }
-  return characters[bookId] || 'Bob'
+function getSecondCharacter(text: string): string {
+  if (text.includes('Frankenstein')) return 'The Monster'
+  if (text.includes('Pride')) return 'Mr. Darcy'
+  if (text.includes('Moby')) return 'Captain Ahab'
+  return 'Bob'
 }
 
-function getThirdCharacter(bookId: string): string {
-  const characters: Record<string, string> = {
-    '84': 'Elizabeth Lavenza',
-    '1342': 'Jane Bennet',
-    '2701': 'Queequeg'
-  }
-  return characters[bookId] || 'Charlie'
+function getThirdCharacter(text: string): string {
+  if (text.includes('Frankenstein')) return 'Elizabeth Lavenza'
+  if (text.includes('Pride')) return 'Jane Bennet'
+  if (text.includes('Moby')) return 'Queequeg'
+  return 'Charlie'
 }

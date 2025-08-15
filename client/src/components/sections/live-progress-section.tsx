@@ -32,12 +32,26 @@ export function LiveProgressSection() {
   const {
     isAnalyzing,
     currentStep,
-    progress,
     characters,
     bookTitle,
     bookAuthor,
     hasResults
   } = useAnalysisResults()
+  
+  // Calculate progress based on current step
+  const progress = (() => {
+    const stepProgress = {
+      'idle': 0,
+      'fetch': 20,
+      'parse': 40,
+      'characters': 60,
+      'graph': 80,
+      'insights': 90,
+      'complete': 100,
+      'error': 0
+    }
+    return stepProgress[currentStep as keyof typeof stepProgress] || 0
+  })()
 
   const workerAnalysis = useWorkerAnalysis()
 
@@ -372,7 +386,7 @@ function PerformanceMetrics({ activeAnalysis }: { activeAnalysis: 'worker' | 'le
     const updateMetrics = () => {
       // Simulate performance metrics
       setMetrics({
-        memoryUsage: Math.round(performance.memory?.usedJSHeapSize / 1024 / 1024) || 0,
+        memoryUsage: Math.round((performance as any).memory?.usedJSHeapSize / 1024 / 1024) || 0,
         processingTime: Date.now() % 60000, // Mock processing time
         networkCalls: 2 // Typical for book download + metadata
       })

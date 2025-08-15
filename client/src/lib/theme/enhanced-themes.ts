@@ -153,7 +153,7 @@ export const generateThemeCSS = (theme: 'light' | 'dark') => {
     } else {
       // Handle nested objects like chart colors
       Object.entries(value).forEach(([subKey, subValue]) => {
-        css += `--${key}-${subKey}: ${subValue.replace('hsl(', '').replace(')', '')};\n`
+        css += `--${key}-${subKey}: ${(subValue as string).replace('hsl(', '').replace(')', '')};\n`
       })
     }
   })

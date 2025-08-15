@@ -30,6 +30,16 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# pnpm cache and store
+.pnpm-store/
+.pnpm-cache/
+.npm-cache/
+
+# Build artifacts
+dist/
+client/dist/
+server/dist/
+
 # env files (can opt-in for committing if needed)
 .env*
 

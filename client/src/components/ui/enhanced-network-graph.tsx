@@ -136,40 +136,31 @@ export function EnhancedNetworkGraph({
     }
   }, [graphData, renderLevel])
 
-  // Calculate filtered graph data based on controls and mode
-  const filteredData = useMemo(() => {
-    const sourceData = optimizedGraphData || { nodes: graphData.nodes, edges: graphData.edges }
-    let nodes = [...sourceData.nodes]
-    let edges = [...sourceData.edges]
+  // Apply filters and create filtered data
+  const filteredData = React.useMemo(() => {
+    if (!graphData.nodes.length) return { nodes: [], edges: [] }
 
-    // Apply edge weight filter
-    edges = edges.filter(edge => edge.weight >= controls.minEdgeWeight)
+    const filteredNodes = graphData.nodes.filter(node => {
+      if (controls.minEdgeWeight > 1) {
+        const nodeEdges = graphData.edges.filter(edge => 
+          edge.source === node.id || edge.target === node.id
+        )
+        if (nodeEdges.length < controls.minEdgeWeight) return false
+      }
+      return true
+    })
 
-    // Apply mode-specific filtering
-    if (graphMode.type === 'ego' && graphMode.selectedNode) {
-      const { nodes: egoNodes, edges: egoEdges } = getEgoNetwork(
-        graphData, 
-        graphMode.selectedNode, 
-        graphMode.egoDistance || 1
-      )
-      nodes = egoNodes
-      edges = egoEdges
+    const filteredEdges = graphData.edges.filter(edge => {
+      const sourceExists = filteredNodes.some(n => n.id === edge.source)
+      const targetExists = filteredNodes.some(n => n.id === edge.target)
+      return sourceExists && targetExists && edge.weight >= controls.minEdgeWeight
+    })
+
+    return {
+      nodes: filteredNodes,
+      edges: filteredEdges
     }
-
-    // Apply community colors if in community mode
-    if (graphMode.type === 'community' && communities.length > 0) {
-      nodes = nodes.map(node => {
-        const community = communities.find(c => c.nodes.includes(node.id))
-        return {
-          ...node,
-          color: community?.color || '#999999',
-          community: community?.id
-        }
-      })
-    }
-
-    return { nodes, edges }
-  }, [graphData, controls.minEdgeWeight, graphMode, communities])
+  }, [graphData, controls.minEdgeWeight])
 
   // Update parent when controls change
   useEffect(() => {

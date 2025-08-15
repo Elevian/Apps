@@ -1,3 +1,5 @@
+import React from 'react'
+
 /**
  * Graph Performance Optimization
  * Ensures ≥50 FPS during graph interactions through efficient rendering and computation
@@ -396,7 +398,4 @@ export function useGraphPerformance() {
   }
 }
 
-// Fix React import issue
-declare global {
-  const React: typeof import('react')
-}
+

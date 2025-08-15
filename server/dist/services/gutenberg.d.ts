@@ -13,7 +13,8 @@ export interface GutenbergResponse {
 }
 export declare class GutenbergService {
     private static readonly BASE_URL;
-    private static readonly MIRROR_URLS;
+    private static readonly FALLBACK_BASE_URL;
+    private static readonly MAX_TEXT_LENGTH;
     /**
      * Find the best .txt URL for a given book ID
      */
@@ -21,20 +22,55 @@ export declare class GutenbergService {
         url: string;
         title: string;
         author: string;
+        triedUrls?: string[];
     } | null>;
     /**
-     * Fetch and clean the text content of a book
+     * Fetch and clean the text content of a book with comprehensive fallback
      */
     static fetchText(id: string): Promise<{
         text: string;
         title: string;
         author: string;
         wordCount: number;
+        triedUrls?: string[];
+        source?: string;
     } | null>;
     /**
-     * Find the best text URL from available formats
+     * Strategy 1: Try direct Gutenberg fetch with multiple retries and URL patterns
      */
-    private static findBestTextUrl;
+    private static tryDirectGutenbergFetch;
+    /**
+     * Strategy 2: Use Gutendx API to get proper URLs
+     */
+    private static tryGutendxApproach;
+    /**
+     * Strategy 3: Use mock data for known books
+     */
+    private static tryMockData;
+    /**
+     * Generate all possible Gutenberg URL patterns for a book ID
+     */
+    private static generateAllPossibleUrls;
+    /**
+     * Try a single URL with retry logic and text truncation
+     */
+    private static tryUrlWithRetries;
+    /**
+     * Find a working text URL by trying multiple formats
+     */
+    private static findWorkingTextUrl;
+    /**
+     * Extract text URLs from API format data
+     */
+    private static extractTextUrlsFromFormats;
+    /**
+     * Test if a URL returns valid content
+     */
+    private static testUrl;
+    /**
+     * Extract title and author from Project Gutenberg text headers
+     */
+    private static extractMetadataFromText;
     /**
      * Clean Gutenberg text by removing headers and footers
      */

@@ -154,7 +154,7 @@ export function BookComparison({
   const clearComparison = useCallback(() => {
     setComparison(null)
     setCompareBookId('')
-    workerAnalysis.reset?.()
+    workerAnalysis.resetAnalysis?.()
   }, [workerAnalysis])
 
   /**
@@ -511,17 +511,21 @@ const NetworkOverlay = React.forwardRef<any, {
   
   const overlayData = React.useMemo(() => {
     if (mode === 'separate') {
-      // Side by side networks
-      const book1Nodes = comparison.book1.graphData.nodes.map(node => ({
+      // Side by side networks - create new nodes with calculated positions
+      const book1Nodes = comparison.book1.graphData.nodes.map((node, index) => ({
         ...node,
-        x: node.x ? node.x - 200 : undefined,
+        // Calculate positions based on index since GraphNode doesn't have x/y
+        x: (index % 10) * 40 - 200,
+        y: Math.floor(index / 10) * 40 - 100,
         color: '#3b82f6',
         book: 1
       }))
       
-      const book2Nodes = comparison.book2.graphData.nodes.map(node => ({
+      const book2Nodes = comparison.book2.graphData.nodes.map((node, index) => ({
         ...node,
-        x: node.x ? node.x + 200 : undefined,
+        // Calculate positions based on index since GraphNode doesn't have x/y
+        x: (index % 10) * 40 + 200,
+        y: Math.floor(index / 10) * 40 - 100,
         color: '#ef4444',
         book: 2
       }))
@@ -538,11 +542,11 @@ const NetworkOverlay = React.forwardRef<any, {
       
       return {
         nodes: [...book1Nodes, ...book2Nodes],
-        edges: [...book1Edges, ...book2Edges]
+        links: [...book1Edges, ...book2Edges] // react-force-graph-2d expects 'links' not 'edges'
       }
     } else {
       // Merged network with character overlap
-      const allCharacters = new Map<string, GraphNode>()
+      const allCharacters = new Map<string, GraphNode & { books?: number[] }>()
       
       // Add book 1 characters
       comparison.book1.graphData.nodes.forEach(node => {
@@ -576,7 +580,7 @@ const NetworkOverlay = React.forwardRef<any, {
       
       return {
         nodes: Array.from(allCharacters.values()),
-        edges: mergedEdges
+        links: mergedEdges // react-force-graph-2d expects 'links' not 'edges'
       }
     }
   }, [comparison, mode])
@@ -584,7 +588,7 @@ const NetworkOverlay = React.forwardRef<any, {
   return (
     <div className="w-full h-[400px] border rounded-lg overflow-hidden bg-background">
       <ForceGraph2D
-        ref={ref}
+        ref={ref as React.MutableRefObject<any>}
         graphData={overlayData}
         width={undefined}
         height={400}
@@ -595,9 +599,11 @@ const NetworkOverlay = React.forwardRef<any, {
         nodeVal={(node: any) => (node.size || 1) * 2}
         linkColor="color"
         linkWidth={(link: any) => Math.sqrt(link.weight || 1)}
-        linkOpacity={0.6}
         warmupTicks={100}
-        cooldownTicks={0}
+        cooldownTicks={50}
+        enableNodeDrag={true}
+        enableZoomInteraction={true}
+        enablePanInteraction={true}
       />
       
       {/* Legend */}
@@ -674,8 +680,8 @@ function SentimentBar({ quotes }: { quotes: EnhancedQuote[] }) {
     let positive = 0, neutral = 0, negative = 0
     
     quotes.forEach(quote => {
-      if (quote.sentiment > 0.1) positive++
-      else if (quote.sentiment < -0.1) negative++
+      if (quote.sentimentScore > 0.1) positive++
+      else if (quote.sentimentScore < -0.1) negative++
       else neutral++
     })
     
@@ -724,8 +730,8 @@ function calculateComparisonMetrics(
   const avgDegreeRatio = book2.networkStats.averageDegree / (book1.networkStats.averageDegree || 0.001)
 
   // Sentiment difference
-  const book1Sentiment = book1.quotes.reduce((sum, q) => sum + q.sentiment, 0) / (book1.quotes.length || 1)
-  const book2Sentiment = book2.quotes.reduce((sum, q) => sum + q.sentiment, 0) / (book2.quotes.length || 1)
+  const book1Sentiment = book1.quotes.reduce((sum, q) => sum + q.sentimentScore, 0) / (book1.quotes.length || 1)
+  const book2Sentiment = book2.quotes.reduce((sum, q) => sum + q.sentimentScore, 0) / (book2.quotes.length || 1)
   const sentimentDifference = book2Sentiment - book1Sentiment
 
   // Complexity score (characters * density * avg_degree)

@@ -277,7 +277,7 @@ export class PDFReportGenerator {
       `Connected Components: ${data.networkStats.components}`,
       `Modularity: ${data.networkStats.modularity.toFixed(3)}`,
       `Network Diameter: ${data.networkStats.diameter}`,
-      `Average Clustering: ${data.networkStats.clustering.toFixed(3)}`
+      `Average Clustering: ${data.networkStats.averageClustering.toFixed(3)}`
     ]
 
     globalMetrics.forEach(metric => {
@@ -350,7 +350,7 @@ export class PDFReportGenerator {
     this.addSectionHeader('Character Quotes & Sentiment')
 
     const topQuotes = data.quotes
-      .sort((a, b) => Math.abs(b.sentiment) - Math.abs(a.sentiment))
+      .sort((a, b) => Math.abs(b.sentimentScore) - Math.abs(a.sentimentScore))
       .slice(0, this.options.maxQuotes)
 
     topQuotes.forEach((quote, index) => {
@@ -366,9 +366,9 @@ export class PDFReportGenerator {
       // Sentiment info
       this.doc.setFont('helvetica', 'normal')
       this.doc.setFontSize(8)
-      const sentimentColor = quote.sentiment > 0 ? [0, 150, 0] : quote.sentiment < 0 ? [150, 0, 0] : [100, 100, 100]
-      this.doc.setTextColor(...sentimentColor)
-      this.addText(`Sentiment: ${quote.sentiment.toFixed(2)} | Confidence: ${quote.confidence.toFixed(2)} | Chapter: ${quote.chapter}`)
+      const sentimentColor = quote.sentimentScore > 0 ? [0, 150, 0] : quote.sentimentScore < 0 ? [150, 0, 0] : [100, 100, 100]
+      this.doc.setTextColor(sentimentColor[0], sentimentColor[1], sentimentColor[2])
+              this.addText(`Sentiment: ${quote.sentimentScore.toFixed(2)} | Confidence: ${quote.confidence.toFixed(2)} | Chapter: ${quote.chapter}`)
       this.doc.setTextColor(0, 0, 0)
       
       this.currentY += 5
@@ -384,13 +384,13 @@ export class PDFReportGenerator {
     this.addSubheader('Key Topics by Chapter')
 
     data.chapterTopics.slice(0, 10).forEach(topic => {
-      this.addText(`Chapter ${topic.chapter}: ${topic.keywords.slice(0, 5).join(', ')}`)
+      this.addText(`Chapter ${topic.chapterNumber}: ${topic.topTerms.slice(0, 5).map(t => t.term).join(', ')}`)
     })
 
     // Most frequent topics
     this.addSubheader('Most Frequent Topics')
     
-    const allKeywords = data.chapterTopics.flatMap(topic => topic.keywords)
+    const allKeywords = data.chapterTopics.flatMap(topic => topic.topTerms.map(t => t.term))
     const keywordFreq = new Map<string, number>()
     
     allKeywords.forEach(keyword => {

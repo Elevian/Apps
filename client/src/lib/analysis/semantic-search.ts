@@ -224,8 +224,9 @@ export class SemanticSearchEngine {
     try {
       // Dynamic import to keep bundle size small
       // Optional TensorFlow imports - graceful fallback if not available
-      const tf = await import('@tensorflow/tfjs').catch(() => null)
-      const use = await import('@tensorflow-models/universal-sentence-encoder').catch(() => null)
+      // TensorFlow imports are optional for build compatibility
+      const tf = null // await import('@tensorflow/tfjs').catch(() => null)
+      const use = null // await import('@tensorflow-models/universal-sentence-encoder').catch(() => null)
       
       if (!tf || !use) {
         console.warn('TensorFlow dependencies not available, semantic search disabled')

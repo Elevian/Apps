@@ -58,8 +58,34 @@ export class StateManager {
    * Create shareable state from current analysis
    */
   static createShareableState(
-    analysisData: any,
-    uiState: any = {},
+    analysisData: {
+      bookId?: string
+      bookTitle?: string
+      bookAuthor?: string
+      characters?: Character[]
+      graphData?: GraphData
+      networkMetrics?: NetworkMetrics[]
+      networkStats?: NetworkStats
+      enhancedQuotes?: EnhancedQuote[]
+      chapterTopics?: ChapterTopic[]
+      stats?: {
+        processingTime?: number
+        textLength?: number
+        chaptersCount?: number
+        extractionMethod?: string
+      }
+    },
+    uiState: {
+      selectedCharacter?: string
+      graphMode?: string
+      graphSettings?: {
+        sentenceWindow: number
+        minEdgeWeight: number
+        showLabels: boolean
+        nodeSize: number
+        linkWidth: number
+      }
+    } = {},
     options: ShareOptions = {}
   ): ShareableState {
     const opts = {
@@ -75,7 +101,7 @@ export class StateManager {
     let quotes = analysisData.enhancedQuotes || []
     if (opts.maxQuotes && quotes.length > opts.maxQuotes) {
       quotes = quotes
-        .sort((a: EnhancedQuote, b: EnhancedQuote) => Math.abs(b.sentiment) - Math.abs(a.sentiment))
+        .sort((a: EnhancedQuote, b: EnhancedQuote) => Math.abs(b.sentimentScore) - Math.abs(a.sentimentScore))
         .slice(0, opts.maxQuotes)
     }
 
@@ -91,7 +117,27 @@ export class StateManager {
       
       // Optional data based on options
       networkMetrics: opts.includeMetrics ? (analysisData.networkMetrics || []) : [],
-      networkStats: opts.includeMetrics ? (analysisData.networkStats || {}) : {} as NetworkStats,
+      networkStats: opts.includeMetrics ? (analysisData.networkStats || {
+        nodeCount: 0,
+        edgeCount: 0,
+        density: 0,
+        averageDegree: 0,
+        averageClustering: 0,
+        diameter: 0,
+        radius: 0,
+        components: 1,
+        modularity: 0
+      }) : {
+        nodeCount: 0,
+        edgeCount: 0,
+        density: 0,
+        averageDegree: 0,
+        averageClustering: 0,
+        diameter: 0,
+        radius: 0,
+        components: 1,
+        modularity: 0
+      },
       quotes: opts.includeQuotes ? quotes : [],
       chapterTopics: opts.includeTopics ? (analysisData.chapterTopics || []) : [],
       
@@ -300,14 +346,14 @@ export class StateManager {
       q: options.includeQuotes ? optimized.quotes.map(quote => ({
         c: quote.character,
         t: quote.text.substring(0, 200), // Limit text length
-        s: Math.round(quote.sentiment * 100) / 100,
+        s: Math.round(quote.sentimentScore * 100) / 100,
         ch: quote.chapter
       })) : null,
       
       // Topics (keywords only)
       tp: options.includeTopics ? optimized.chapterTopics.map(topic => ({
-        c: topic.chapter,
-        k: topic.keywords.slice(0, 5) // Top 5 keywords only
+        c: topic.chapterNumber,
+        k: topic.topTerms.slice(0, 5).map(t => t.term) // Top 5 terms only
       })) : null,
       
       // UI state
@@ -380,13 +426,26 @@ export class StateManager {
       
       networkMetrics: [], // Can be recalculated
       networkStats: compressed.ns ? {
+        nodeCount: 0,
+        edgeCount: 0,
         density: compressed.ns.d,
         averageDegree: compressed.ns.ad,
-        components: compressed.ns.c,
-        modularity: compressed.ns.m,
+        averageClustering: 0,
         diameter: 0,
-        clustering: 0
-      } : {} as NetworkStats,
+        radius: 0,
+        components: compressed.ns.c,
+        modularity: compressed.ns.m
+      } : {
+        nodeCount: 0,
+        edgeCount: 0,
+        density: 0,
+        averageDegree: 0,
+        averageClustering: 0,
+        diameter: 0,
+        radius: 0,
+        components: 1,
+        modularity: 0
+      },
       
       quotes: (compressed.q || []).map((q: any) => ({
         character: q.c,

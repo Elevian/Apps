@@ -2,19 +2,19 @@ import '@testing-library/jest-dom'
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  observe() {}
-  unobserve() {}
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {}
+  observe(target: Element) {}
+  unobserve(target: Element) {}
   disconnect() {}
-}
+} as any
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  observe() {}
-  unobserve() {}
+  constructor(callback: ResizeObserverCallback) {}
+  observe(target: Element) {}
+  unobserve(target: Element) {}
   disconnect() {}
-}
+} as any
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {

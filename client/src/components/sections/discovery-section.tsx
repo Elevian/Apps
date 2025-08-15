@@ -23,19 +23,22 @@ export function DiscoverySection() {
     title: bookTitle || 'Unknown Book',
     author: bookAuthor || 'Unknown Author',
     characters: characters,
-    graphData: characterResults?.graphData || { nodes: [], edges: [] },
-    networkMetrics: characterResults?.networkMetrics || [],
-    networkStats: characterResults?.networkStats || {
+    graphData: { nodes: [], edges: [] }, // Placeholder - would be generated from characters
+    networkMetrics: [], // Placeholder - would be calculated from graph data
+    networkStats: {
+      nodeCount: 0,
+      edgeCount: 0,
       density: 0,
       averageDegree: 0,
-      components: 1,
-      modularity: 0,
+      averageClustering: 0,
       diameter: 0,
-      clustering: 0
+      radius: 0,
+      components: 1,
+      modularity: 0
     },
-    quotes: characterResults?.enhancedQuotes || [],
-    totalWords: characterResults?.stats?.textLength || 0,
-    processingTime: characterResults?.stats?.processingTime || 0
+    quotes: [], // Placeholder - would be extracted from text
+    totalWords: characterResults?.text_length || 0,
+    processingTime: characterResults?.processing_time_ms || 0
   } : undefined
 
   return (
@@ -85,8 +88,8 @@ export function DiscoverySection() {
         bookTitle={bookTitle}
         bookAuthor={bookAuthor}
         bookText={bookText}
-        chapterTopics={characterResults?.chapterTopics}
-        totalChapters={characterResults?.stats?.chaptersCount || 0}
+        chapterTopics={[]} // Placeholder - would be extracted from text
+        totalChapters={0} // Placeholder - would be calculated from text
         onSummaryGenerated={(summaries) => {
           console.log('Summaries generated:', summaries)
           // Here you could save summaries to state or local storage

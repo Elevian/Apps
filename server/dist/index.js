@@ -1,4 +1,25 @@
 "use strict";
+/**
+ * Gutenberg Character Analysis - Express API Server
+ *
+ * Available Endpoints:
+ *
+ * Health & Monitoring:
+ *   GET  /api/health                     - Server health check
+ *   GET  /api/analyze/health             - Analysis service health check
+ *   GET  /api/analyze/models             - Available analysis models
+ *
+ * Gutenberg Books:
+ *   GET  /api/gutenberg/resolve/:id      - Get best text URL for book ID
+ *   GET  /api/gutenberg/text/:id         - Fetch full book text (cleaned)
+ *   GET  /api/gutenberg/text/:id/preview - Fetch book text preview (1000 chars)
+ *
+ * Character Analysis:
+ *   POST /api/analyze/characters         - Analyze characters in text
+ *
+ * Error Handling:
+ *   All other routes return 404 with JSON error message
+ */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -11,7 +32,7 @@ const app = (0, express_1.default)();
 const PORT = process.env.PORT || 4000;
 // Middleware
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'],
     credentials: true
 }));
 app.use(express_1.default.json({ limit: '50mb' }));
